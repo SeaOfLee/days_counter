@@ -137,13 +137,21 @@ the widget-bridge `MethodChannel` name in
 [ios/Runner/AppDelegate.swift](ios/Runner/AppDelegate.swift),
 [lib/services/widget_bridge.dart](lib/services/widget_bridge.dart), and
 [test/fakes/widget_bridge_mock.dart](test/fakes/widget_bridge_mock.dart) (now
-`net.leerichardson.dayscounter/widget`). Confirmed building for the
-simulator; device builds need the user's Apple Developer Program
-enrollment (Individual, submitted, pending confirmation as of this
-writing) to finish processing before Xcode can provision the new App
-ID and App Group with Apple. Still to do in Phase 20: switch to a real
-app icon (still the default Flutter template one), App Store Connect
-app record/metadata, release signing, and archive/submit.
+`net.leerichardson.dayscounter/widget`). The user's Apple Developer
+Program (Individual) enrollment is confirmed and active, and a device
+build/deploy under the new App ID and App Group succeeded, confirming
+Apple's provisioning went through. The app icon
+(`ios/Runner/Assets.xcassets/AppIcon.appiconset/`) is also done — all
+15 declared sizes were generated via `sips` from a user-supplied
+1024×1024 master image (no alpha channel, as the App Store marketing
+icon requires), confirmed rendering on-device. The widget extension's
+own icon asset catalog
+(`ios/DaysCounterWidget/Assets.xcassets/AppIcon.appiconset/`, used for
+its gallery listing) is intentionally left empty for now — WidgetKit
+falls back to the app's icon, and it's not required for submission.
+Still to do in Phase 20: App Store Connect app record/metadata
+(name, category, age rating, privacy policy URL, screenshots),
+release signing, and archive/submit.
 Expect to be asked to work through the phases in
 [PROJECT_PLAN.md](PROJECT_PLAN.md) roughly in order.
 
