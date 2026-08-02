@@ -59,10 +59,17 @@ The widget's `Provider.getTimeline` (Phase 14) now generates a real
 7-day run of `TimelineEntry` values from a hard-coded anchor date
 (June 19, 2023), normalized to start-of-day and using `.atEnd` as the
 reload policy, so the displayed day count advances automatically at
-midnight instead of staying frozen. Next up is Phase 15, configuring an
-App Group so the Flutter app and widget extension can share data (the
-widget is still hard-coded to one fake event, not real Flutter data —
-that's Phase 16). Expect to be asked to work through the phases in
+midnight instead of staying frozen. Both targets now share the App
+Group `group.com.example.daysCounter` (Phase 15) — Runner's and the
+widget extension's entitlements
+([ios/Runner/Runner.entitlements](ios/Runner/Runner.entitlements),
+[ios/DaysCounterWidgetExtension.entitlements](ios/DaysCounterWidgetExtension.entitlements))
+both declare it under the same development team, confirmed by
+inspecting the signed binaries. The widget is still hard-coded to one
+fake event, not real Flutter data — next up is Phase 16, writing the
+selected event's payload from Flutter into the App Group's shared
+storage so the widget can read it. Expect to be asked to work through
+the phases in
 [PROJECT_PLAN.md](PROJECT_PLAN.md) roughly in order.
 
 ## Guiding principles (from PROJECT_PLAN.md)
