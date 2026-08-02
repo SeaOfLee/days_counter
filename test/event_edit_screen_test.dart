@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:days_counter/repositories/local_event_repository.dart';
 import 'package:days_counter/screens/event_list_screen.dart';
+
+import 'fakes/in_memory_event_repository.dart';
 
 Future<void> _pumpEventList(WidgetTester tester) async {
   await tester.pumpWidget(
-    MaterialApp(home: EventListScreen(repository: LocalEventRepository())),
+    MaterialApp(home: EventListScreen(repository: InMemoryEventRepository())),
   );
   await tester.pump();
 }

@@ -3,9 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:days_counter/app.dart';
 
+import 'fakes/in_memory_event_repository.dart';
+
 void main() {
   testWidgets('shows every in-memory event', (WidgetTester tester) async {
-    await tester.pumpWidget(App());
+    await tester.pumpWidget(App(repository: InMemoryEventRepository()));
     await tester.pump();
 
     expect(find.text('Days'), findsOneWidget);

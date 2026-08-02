@@ -1,17 +1,32 @@
+import 'dart:io';
+
 import 'package:days_counter/models/date_event.dart';
 import 'package:days_counter/repositories/local_event_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  late Directory tempDir;
+
+  setUp(() {
+    tempDir = Directory.systemTemp.createTempSync('days_counter_test_');
+  });
+
+  tearDown(() {
+    tempDir.deleteSync(recursive: true);
+  });
+
+  LocalEventRepository makeRepository() {
+    return LocalEventRepository(directoryProvider: () async => tempDir);
+  }
+
   group('LocalEventRepository', () {
-    test('getEvents returns the seeded events', () async {
-      final repository = LocalEventRepository();
-      final events = await repository.getEvents();
+    test('getEvents seeds example events on first run', () async {
+      final events = await makeRepository().getEvents();
       expect(events, isNotEmpty);
     });
 
     test('saveEvent adds a new event by id', () async {
-      final repository = LocalEventRepository();
+      final repository = makeRepository();
       final before = await repository.getEvents();
 
       final newEvent = DateEvent(
@@ -28,7 +43,7 @@ void main() {
     });
 
     test('saveEvent overwrites an existing event with the same id', () async {
-      final repository = LocalEventRepository();
+      final repository = makeRepository();
       final before = await repository.getEvents();
       final existing = before.first;
 
@@ -42,11 +57,14 @@ void main() {
 
       final after = await repository.getEvents();
       expect(after.length, before.length);
-      expect(after.firstWhere((e) => e.id == existing.id).title, 'Updated Title');
+      expect(
+        after.firstWhere((e) => e.id == existing.id).title,
+        'Updated Title',
+      );
     });
 
     test('deleteEvent removes the event with the matching id', () async {
-      final repository = LocalEventRepository();
+      final repository = makeRepository();
       final before = await repository.getEvents();
       final target = before.first;
 
@@ -55,6 +73,24 @@ void main() {
       final after = await repository.getEvents();
       expect(after.length, before.length - 1);
       expect(after.any((e) => e.id == target.id), isFalse);
+    });
+
+    test('events survive a simulated app restart', () async {
+      final firstRun = makeRepository();
+      await firstRun.saveEvent(
+        DateEvent(
+          id: 'persisted-1',
+          title: 'Persisted Event',
+          date: DateTime(2026, 1, 1),
+          direction: CountDirection.since,
+        ),
+      );
+
+      // A fresh repository instance, as a new app launch would create.
+      final secondRun = makeRepository();
+      final events = await secondRun.getEvents();
+
+      expect(events.any((e) => e.id == 'persisted-1'), isTrue);
     });
   });
 }
