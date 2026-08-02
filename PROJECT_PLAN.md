@@ -144,7 +144,7 @@ there first before starting work.
   have an explicit **Verify** command — don't move to the next phase until
   both are satisfied.
 - Phases 0–19 are required for V1. Anything under a "Post-V1" heading
-  (including the two post-V1 phases near the end) is optional and out of
+  (including the three post-V1 phases near the end) is optional and out of
   scope unless explicitly requested — don't treat their numbers as "do
   this next."
 - Commit at the end of each phase with a message describing what was
@@ -1206,8 +1206,83 @@ The project reaches V1 when:
 Not required for V1. Numbered for reference back to earlier drafts of
 this plan, not as a continuation of the Phase 0–19 sequence — don't start
 these until the V1 Definition of Done above is met, and only if desired.
+Phase 20 is the exception: pursue it once explicitly requested, ahead
+of Phases 21–22, since it's about shipping what already exists rather
+than an optional additional learning exercise.
 
-## Phase 20 — Configurable Widgets
+## Phase 20 — Prepare for App Store Submission
+
+The app itself needs no new functionality for this phase — App Store
+submission is almost entirely account, asset, and metadata work, not
+code. This project has an easier path than most: no backend, no
+accounts, and no data collection to disclose.
+
+### Apple Developer Program
+
+Enroll in the paid Apple Developer Program ($99/year) at
+developer.apple.com, if not already enrolled. The free personal team
+used for device testing so far can only run builds on your own
+registered devices — App Store distribution requires a paid
+membership. Enrollment can take a day or so to process.
+
+### Bundle Identifier
+
+Replace the placeholder bundle identifier (`com.example.daysCounter`)
+with one you actually own, e.g. `com.<yourname>.dayscounter`. Register
+it as a new App ID in the Apple Developer portal, or let Xcode's
+automatic signing create it once the bundle ID is changed in
+Signing & Capabilities.
+
+### App Icon
+
+Replace the default Flutter template icon
+(`ios/Runner/Assets.xcassets/AppIcon.appiconset`) with a real design.
+Xcode's single-size App Icon asset (1024×1024) generates the rest.
+
+### App Store Connect
+
+Create the app record at appstoreconnect.apple.com:
+
+```text
+App name
+Category
+Age rating questionnaire
+Privacy policy URL (required even though this app collects nothing)
+App Privacy "nutrition label" (straightforward here — no networking,
+  accounts, or analytics to disclose)
+Screenshots (at least one device size)
+```
+
+### Signing for Release
+
+Switch from the Development signing certificate/provisioning profile
+used for device testing to a Distribution certificate and App Store
+provisioning profile. Xcode's automatic signing handles most of this
+once the paid membership is active.
+
+### Archive and Submit
+
+```text
+Xcode
+→ Product
+→ Archive
+→ Validate App
+→ Distribute App
+→ App Store Connect
+```
+
+Fill in release notes in App Store Connect, then submit for review.
+Typical review turnaround is 1–2 days, though this varies.
+
+The same uploaded build can also be distributed via TestFlight to
+testers before (or instead of) a public App Store release, if desired.
+
+Success criterion:
+
+The app is submitted for App Store review. (Approval or rejection is
+Apple's call, not something to engineer around here.)
+
+## Phase 21 — Configurable Widgets
 
 Allow multiple widget instances, each configured for a different event.
 
@@ -1243,7 +1318,7 @@ Success criterion:
 
 Multiple widgets can display different events.
 
-## Phase 21 — Lock Screen Widgets
+## Phase 22 — Lock Screen Widgets
 
 Explore:
 
@@ -1277,8 +1352,6 @@ Possible future exercises:
 - Relative years/months/days display
 - Accessibility improvements
 - Localization
-- TestFlight distribution
-- App Store publishing
 
 Do these only after V1 works.
 

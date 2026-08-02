@@ -118,10 +118,14 @@ left, count+"days" right via `HStack`/`Spacer`) alongside the original
 makes that explicit — both confirmed rendering cleanly on-device.
 
 **This completes every item in PROJECT_PLAN.md's "V1 Definition of
-Done."** All required phases (0–19) are done. Anything further should
-be treated as Post-V1 (Phases 20–21, or the "Post-V1 Learning Ideas"
-list) and only pursued if explicitly requested — don't treat later
-phase numbers as an implicit next step the way earlier phases were.
+Done."** All required phases (0–19) are done. Everything past V1 is
+optional and only pursued if explicitly requested, with one exception:
+**Phase 20 — Prepare for App Store Submission is the active next
+phase**, requested by the user right after V1 landed, to be worked on
+before any subsequent design/look-and-feel pass (which the user plans
+to handle themselves). Phases 21–22 (Configurable Widgets, Lock Screen
+Widgets) and the remaining "Post-V1 Learning Ideas" list are still
+fully optional — don't treat their numbers as an implicit next step.
 Expect to be asked to work through the phases in
 [PROJECT_PLAN.md](PROJECT_PLAN.md) roughly in order.
 
