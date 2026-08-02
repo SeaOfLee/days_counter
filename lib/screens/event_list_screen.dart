@@ -5,6 +5,7 @@ import '../models/date_event.dart';
 import '../providers/events_provider.dart';
 import '../widgets/event_card.dart';
 import 'event_edit_screen.dart';
+import 'featured_event_screen.dart';
 
 class EventListScreen extends ConsumerWidget {
   const EventListScreen({super.key});
@@ -40,7 +41,19 @@ class EventListScreen extends ConsumerWidget {
     final eventsAsync = ref.watch(eventsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Days')),
+      appBar: AppBar(
+        title: const Text('Days'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.widgets_outlined),
+            tooltip: 'Featured Widget Event',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const FeaturedEventScreen()),
+            ),
+          ),
+        ],
+      ),
       body: eventsAsync.when(
         data: (events) => events.isEmpty
             ? const _EmptyState()

@@ -4,6 +4,7 @@ import '../models/date_event.dart';
 import '../repositories/event_repository.dart';
 import '../repositories/local_event_repository.dart';
 import '../services/widget_bridge.dart';
+import 'featured_event_provider.dart';
 
 final eventRepositoryProvider = Provider<EventRepository>((ref) {
   return LocalEventRepository();
@@ -37,14 +38,13 @@ class EventsNotifier extends AsyncNotifier<List<DateEvent>> {
     await _syncFeaturedEventToWidget(events);
   }
 
-  // There's no featured-event setting yet (Phase 18), so the first event
-  // stands in as a temporary placeholder for "the event shown in the widget".
   // Awaited deliberately (not fire-and-forget): the app can be backgrounded
   // moments after an edit, and an in-flight platform-channel call can be cut
   // off mid-write if we don't wait for it here.
-  Future<void> _syncFeaturedEventToWidget(List<DateEvent> events) {
-    return WidgetBridge.updateFeaturedEvent(
-      events.isEmpty ? null : events.first,
+  Future<void> _syncFeaturedEventToWidget(List<DateEvent> events) async {
+    final featuredEventId = await ref.read(featuredEventIdProvider.future);
+    await WidgetBridge.updateFeaturedEvent(
+      selectFeaturedEvent(events, featuredEventId),
     );
   }
 }

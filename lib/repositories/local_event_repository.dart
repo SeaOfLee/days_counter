@@ -52,6 +52,11 @@ class LocalEventRepository implements EventRepository {
     return File('${dir.path}/events.json');
   }
 
+  Future<File> _featuredEventIdFile() async {
+    final dir = await _directoryProvider();
+    return File('${dir.path}/featured_event_id.txt');
+  }
+
   Future<List<DateEvent>> _load() async {
     final cached = _cache;
     if (cached != null) return cached;
@@ -101,5 +106,19 @@ class LocalEventRepository implements EventRepository {
     final events = await _load();
     events.removeWhere((e) => e.id == id);
     await _persist(events);
+  }
+
+  @override
+  Future<String?> getFeaturedEventId() async {
+    final file = await _featuredEventIdFile();
+    if (!await file.exists()) return null;
+    final id = await file.readAsString();
+    return id.isEmpty ? null : id;
+  }
+
+  @override
+  Future<void> setFeaturedEventId(String? id) async {
+    final file = await _featuredEventIdFile();
+    await file.writeAsString(id ?? '');
   }
 }

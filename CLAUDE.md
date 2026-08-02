@@ -86,9 +86,35 @@ forever on the unmocked channel rather than throwing quickly, so
 calls `WidgetCenter.shared.reloadAllTimelines()` (guarded by
 `if #available(iOS 14.0, *)`) after every write (Phase 17), so the
 widget refreshes immediately after an edit instead of waiting on
-WidgetKit's own reload schedule — confirmed on-device. Next up is
-Phase 18, replacing the "first event" stand-in with a real featured-event
-picker in the app. Expect to be asked to work through the phases in
+WidgetKit's own reload schedule — confirmed on-device. Phase 18 is also
+done: [lib/providers/featured_event_provider.dart](lib/providers/featured_event_provider.dart) persists a chosen
+featured-event ID via new `EventRepository.get/setFeaturedEventId()`
+methods (a small `featured_event_id.txt` file alongside `events.json`
+in `LocalEventRepository`), and [lib/screens/featured_event_screen.dart](lib/screens/featured_event_screen.dart)
+(reached via a new icon in `EventListScreen`'s app bar) lets the user
+pick one. `selectFeaturedEvent()` in the provider file is the single
+source of truth for "which event does the widget show" — it falls back
+to the first event if nothing's chosen yet or the chosen one was
+deleted — and both `EventsNotifier` and `FeaturedEventIdNotifier` call
+it before syncing to `WidgetBridge`, awaited the same way as Phase 16/17.
+
+**Flutter is on the `beta` channel, not `stable`**, and should stay
+there until further notice. Stable 3.44.8's engine crashes
+(`EXC_BAD_ACCESS` in `-[VSyncClient initWithTaskRunner:callback:]`,
+called from `FlutterViewController createTouchRateCorrectionVSyncClientIfNeeded`)
+on first launch on this iPhone 13 Pro running iOS 26.5.2 — confirmed
+with a throwaway stock `flutter create` app crashing identically, so
+it's an engine/iOS compatibility bug, not anything in this project.
+Beta 3.47.0-0.3.pre's newer engine does not have this bug. If physical-device
+testing breaks again with this exact crash signature, check whether
+stable has since shipped a fix before assuming it's a regression here.
+Switching channels bumped `IPHONEOS_DEPLOYMENT_TARGET` from 13.0 to 15.0
+project-wide (an expected, harmless Flutter tooling migration).
+
+Next up is Phase 19: the widget currently has no `.supportedFamilies`
+restriction (and its layout is only really designed for `systemSmall`) —
+add explicit small/medium support with a layout that adapts to each.
+Expect to be asked to work through the phases in
 [PROJECT_PLAN.md](PROJECT_PLAN.md) roughly in order.
 
 ## Guiding principles (from PROJECT_PLAN.md)
