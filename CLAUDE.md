@@ -65,11 +65,27 @@ widget extension's entitlements
 ([ios/Runner/Runner.entitlements](ios/Runner/Runner.entitlements),
 [ios/DaysCounterWidgetExtension.entitlements](ios/DaysCounterWidgetExtension.entitlements))
 both declare it under the same development team, confirmed by
-inspecting the signed binaries. The widget is still hard-coded to one
-fake event, not real Flutter data — next up is Phase 16, writing the
-selected event's payload from Flutter into the App Group's shared
-storage so the widget can read it. Expect to be asked to work through
-the phases in
+inspecting the signed binaries. The widget now renders real Flutter
+data (Phase 16): [lib/services/widget_bridge.dart](lib/services/widget_bridge.dart) calls a
+`MethodChannel` (`com.example.daysCounter/widget`) whose handler in
+[ios/Runner/AppDelegate.swift](ios/Runner/AppDelegate.swift) writes the JSON payload into the App
+Group's `UserDefaults`; `EventsNotifier` (`build`/`saveEvent`/`deleteEvent`
+in [lib/providers/events_provider.dart](lib/providers/events_provider.dart)) awaits this sync on every
+change rather than firing it and forgetting it — the app can be
+backgrounded moments after an edit, and an un-awaited platform-channel
+call can be cut off mid-write. Since there's no featured-event setting
+yet (that's Phase 18), the *first* event in the list stands in as a
+temporary placeholder for "the event shown in the widget." The widget's
+Swift code mirrors [lib/utils/date_calculations.dart](lib/utils/date_calculations.dart)'s UTC-normalized
+day-diffing (not local-midnight) so counts stay correct across DST. Dart
+tests that exercise `EventsNotifier` must register a mock handler for
+that channel (see [test/fakes/widget_bridge_mock.dart](test/fakes/widget_bridge_mock.dart) and each test
+file's `setUp`) — without it, `flutter_test`'s binary messenger hangs
+forever on the unmocked channel rather than throwing quickly, so
+`pumpAndSettle()` times out. Next up is Phase 17, adding a native bridge
+call so the widget refreshes immediately after an edit instead of
+waiting for WidgetKit's own reload schedule. Expect to be asked to work
+through the phases in
 [PROJECT_PLAN.md](PROJECT_PLAN.md) roughly in order.
 
 ## Guiding principles (from PROJECT_PLAN.md)

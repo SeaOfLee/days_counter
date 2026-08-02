@@ -8,22 +8,73 @@
 import WidgetKit
 import SwiftUI
 
-private let lastDrinkDate = Calendar.current.date(from: DateComponents(year: 2023, month: 6, day: 19))!
+// Keep these in sync with the matching constants in AppDelegate.swift —
+// the two targets compile separately and can't share this definition.
+private let widgetAppGroupIdentifier = "group.com.example.daysCounter"
+private let widgetFeaturedEventKey = "featuredEventPayload"
 
-private func daysSince(_ start: Date, comparedTo date: Date) -> Int {
-    let calendar = Calendar.current
-    let startOfStart = calendar.startOfDay(for: start)
-    let startOfDate = calendar.startOfDay(for: date)
-    return calendar.dateComponents([.day], from: startOfStart, to: startOfDate).day ?? 0
+private struct FeaturedEvent: Decodable {
+    let id: String
+    let title: String
+    let date: String
+    let direction: String
+    let emoji: String?
+}
+
+private let utcCalendar: Calendar = {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "UTC")!
+    return calendar
+}()
+
+private let eventDateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.calendar = utcCalendar
+    formatter.timeZone = utcCalendar.timeZone
+    formatter.dateFormat = "yyyy-MM-dd"
+    return formatter
+}()
+
+/// Mirrors lib/utils/date_calculations.dart: normalize to UTC midnight (not
+/// local midnight) so day counts don't skew across a DST transition.
+private func dateOnlyUTC(fromLocal date: Date) -> Date {
+    let localComponents = Calendar.current.dateComponents([.year, .month, .day], from: date)
+    return utcCalendar.date(from: localComponents)!
+}
+
+private func calendarDayDifference(from start: Date, to end: Date) -> Int {
+    utcCalendar.dateComponents([.day], from: start, to: end).day ?? 0
+}
+
+private func dayCount(for event: FeaturedEvent, on localDate: Date) -> Int? {
+    guard let eventDate = eventDateFormatter.date(from: event.date) else { return nil }
+    let today = dateOnlyUTC(fromLocal: localDate)
+    switch event.direction {
+    case "until":
+        return calendarDayDifference(from: today, to: eventDate)
+    default:
+        return calendarDayDifference(from: eventDate, to: today)
+    }
+}
+
+private func loadFeaturedEvent() -> FeaturedEvent? {
+    guard
+        let defaults = UserDefaults(suiteName: widgetAppGroupIdentifier),
+        let payload = defaults.string(forKey: widgetFeaturedEventKey),
+        let data = payload.data(using: .utf8)
+    else {
+        return nil
+    }
+    return try? JSONDecoder().decode(FeaturedEvent.self, from: data)
 }
 
 struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), dayCount: daysSince(lastDrinkDate, comparedTo: Date()))
+        SimpleEntry(date: Date(), title: "Last Drink", dayCount: 1139)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
-        completion(SimpleEntry(date: Date(), dayCount: daysSince(lastDrinkDate, comparedTo: Date())))
+        completion(currentEntry(for: Date()))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
@@ -34,7 +85,7 @@ struct Provider: TimelineProvider {
             guard let entryDate = calendar.date(byAdding: .day, value: dayOffset, to: startOfToday) else {
                 return nil
             }
-            return SimpleEntry(date: entryDate, dayCount: daysSince(lastDrinkDate, comparedTo: entryDate))
+            return currentEntry(for: entryDate)
         }
 
         // Values only change once a day, so request a fresh timeline once
@@ -42,11 +93,20 @@ struct Provider: TimelineProvider {
         let timeline = Timeline(entries: entries, policy: .atEnd)
         completion(timeline)
     }
+
+    private func currentEntry(for date: Date) -> SimpleEntry {
+        guard let event = loadFeaturedEvent(), let count = dayCount(for: event, on: date) else {
+            return SimpleEntry(date: date, title: "Add an event", dayCount: nil)
+        }
+        let title = [event.emoji, event.title].compactMap { $0 }.joined(separator: " ")
+        return SimpleEntry(date: date, title: title, dayCount: count)
+    }
 }
 
 struct SimpleEntry: TimelineEntry {
     let date: Date
-    let dayCount: Int
+    let title: String
+    let dayCount: Int?
 }
 
 struct DaysCounterWidgetEntryView: View {
@@ -54,12 +114,14 @@ struct DaysCounterWidgetEntryView: View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            Text("Last Drink")
+            Text(entry.title)
 
-            Text(entry.dayCount.formatted())
-                .font(.largeTitle)
+            if let dayCount = entry.dayCount {
+                Text(dayCount.formatted())
+                    .font(.largeTitle)
 
-            Text("days")
+                Text("days")
+            }
         }
     }
 }
@@ -86,6 +148,6 @@ struct DaysCounterWidget: Widget {
 #Preview(as: .systemSmall) {
     DaysCounterWidget()
 } timeline: {
-    SimpleEntry(date: .now, dayCount: 1139)
-    SimpleEntry(date: .now.addingTimeInterval(86400), dayCount: 1140)
+    SimpleEntry(date: .now, title: "Last Drink", dayCount: 1139)
+    SimpleEntry(date: .now.addingTimeInterval(86400), title: "Last Drink", dayCount: 1140)
 }

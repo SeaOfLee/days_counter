@@ -6,6 +6,7 @@ import 'package:days_counter/providers/events_provider.dart';
 import 'package:days_counter/screens/event_list_screen.dart';
 
 import 'fakes/in_memory_event_repository.dart';
+import 'fakes/widget_bridge_mock.dart';
 
 Future<void> _pumpEventList(WidgetTester tester) async {
   await tester.pumpWidget(
@@ -20,6 +21,8 @@ Future<void> _pumpEventList(WidgetTester tester) async {
 }
 
 void main() {
+  setUp(mockWidgetBridgeChannel);
+
   testWidgets('tapping + opens the editor, saving adds the event to the list', (
     WidgetTester tester,
   ) async {
