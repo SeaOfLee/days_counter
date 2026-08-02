@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:days_counter/providers/events_provider.dart';
 import 'package:days_counter/screens/event_list_screen.dart';
 
 import 'fakes/in_memory_event_repository.dart';
 
 Future<void> _pumpEventList(WidgetTester tester) async {
   await tester.pumpWidget(
-    MaterialApp(home: EventListScreen(repository: InMemoryEventRepository())),
+    ProviderScope(
+      overrides: [
+        eventRepositoryProvider.overrideWithValue(InMemoryEventRepository()),
+      ],
+      child: const MaterialApp(home: EventListScreen()),
+    ),
   );
   await tester.pump();
 }
