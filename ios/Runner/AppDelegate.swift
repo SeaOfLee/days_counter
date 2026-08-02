@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import WidgetKit
 
 // Keep these in sync with the matching constants in DaysCounterWidget.swift —
 // the two targets compile separately and can't share this definition.
@@ -31,6 +32,9 @@ private let widgetFeaturedEventKey = "featuredEventPayload"
           defaults?.set(payload, forKey: widgetFeaturedEventKey)
         } else {
           defaults?.removeObject(forKey: widgetFeaturedEventKey)
+        }
+        if #available(iOS 14.0, *) {
+          WidgetCenter.shared.reloadAllTimelines()
         }
         result(nil)
       default:

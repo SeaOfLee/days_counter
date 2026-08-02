@@ -82,10 +82,13 @@ tests that exercise `EventsNotifier` must register a mock handler for
 that channel (see [test/fakes/widget_bridge_mock.dart](test/fakes/widget_bridge_mock.dart) and each test
 file's `setUp`) — without it, `flutter_test`'s binary messenger hangs
 forever on the unmocked channel rather than throwing quickly, so
-`pumpAndSettle()` times out. Next up is Phase 17, adding a native bridge
-call so the widget refreshes immediately after an edit instead of
-waiting for WidgetKit's own reload schedule. Expect to be asked to work
-through the phases in
+`pumpAndSettle()` times out. The AppDelegate's channel handler also now
+calls `WidgetCenter.shared.reloadAllTimelines()` (guarded by
+`if #available(iOS 14.0, *)`) after every write (Phase 17), so the
+widget refreshes immediately after an edit instead of waiting on
+WidgetKit's own reload schedule — confirmed on-device. Next up is
+Phase 18, replacing the "first event" stand-in with a real featured-event
+picker in the app. Expect to be asked to work through the phases in
 [PROJECT_PLAN.md](PROJECT_PLAN.md) roughly in order.
 
 ## Guiding principles (from PROJECT_PLAN.md)
