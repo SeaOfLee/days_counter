@@ -39,9 +39,25 @@ optional emoji next to the title, an empty state appears when there are
 no events, and the app supports light/dark mode via `ThemeMode.system`.
 The app has been signed and run successfully on a physical iPhone
 (Phase 12), with `DEVELOPMENT_TEAM` configured in
-`ios/Runner.xcodeproj/project.pbxproj` via Xcode's automatic signing. No
-native widget work exists yet — next up is Phase 13, adding the
-WidgetKit extension. Expect to be asked to work through the phases in
+`ios/Runner.xcodeproj/project.pbxproj` via Xcode's automatic signing. A
+WidgetKit extension target, `DaysCounterWidget`
+([ios/DaysCounterWidget/DaysCounterWidget.swift](ios/DaysCounterWidget/DaysCounterWidget.swift)),
+now exists and renders a static hard-coded entry ("Last Drink" / "1,139"
+/ "days") addable to the Home Screen (Phase 13). The template-generated
+Control Widget and Live Activity files were removed as out of scope.
+Adding the extension exposed an Xcode 26 build-system bug where
+`ExtractAppIntentsMetadata` cycles with Flutter's "Thin Binary" script
+phase once an extension is embedded; the fix — needed again if the
+widget target is ever recreated — was disabling
+`ENABLE_APP_INTENTS_METADATA_EXTRACTION` on both the Runner and widget
+targets *and* reordering Runner's build phases so "Embed Foundation
+Extensions" runs before "Thin Binary". Do not remove Flutter's
+`Info.plist` input path from the Thin Binary phase to work around this —
+`flutter_tools` (`xcode_thin_binary_build_phase_input_paths_migration.dart`)
+re-adds it on every build to guard against a separate Bonjour/mDNS bug.
+Next up is Phase 14, teaching the widget to generate real timeline
+entries so the day count advances automatically. Expect to be asked to
+work through the phases in
 [PROJECT_PLAN.md](PROJECT_PLAN.md) roughly in order.
 
 ## Guiding principles (from PROJECT_PLAN.md)
