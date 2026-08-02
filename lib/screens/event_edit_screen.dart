@@ -3,8 +3,17 @@ import 'package:flutter/material.dart';
 import '../models/date_event.dart';
 import '../utils/date_calculations.dart';
 
+/// Returned by [EventEditScreen] when the user deletes the event being
+/// edited, distinguishing it from a saved [DateEvent] or a plain cancel.
+class DeleteEvent {
+  const DeleteEvent();
+}
+
 class EventEditScreen extends StatefulWidget {
-  const EventEditScreen({super.key});
+  const EventEditScreen({super.key, this.event});
+
+  /// The event being edited, or null when creating a new one.
+  final DateEvent? event;
 
   @override
   State<EventEditScreen> createState() => _EventEditScreenState();
@@ -12,12 +21,19 @@ class EventEditScreen extends StatefulWidget {
 
 class _EventEditScreenState extends State<EventEditScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _emojiController = TextEditingController();
+  late final _titleController = TextEditingController(
+    text: widget.event?.title,
+  );
+  late final _emojiController = TextEditingController(
+    text: widget.event?.emoji,
+  );
 
-  DateTime? _date;
-  CountDirection _direction = CountDirection.since;
+  late DateTime? _date = widget.event?.date;
+  late CountDirection _direction =
+      widget.event?.direction ?? CountDirection.since;
   bool _dateError = false;
+
+  bool get _isEditing => widget.event != null;
 
   @override
   void dispose() {
@@ -51,7 +67,7 @@ class _EventEditScreenState extends State<EventEditScreen> {
 
     final emoji = _emojiController.text.trim();
     final event = DateEvent(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      id: widget.event?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
       title: _titleController.text.trim(),
       date: _date!,
       direction: _direction,
@@ -60,12 +76,22 @@ class _EventEditScreenState extends State<EventEditScreen> {
     Navigator.pop(context, event);
   }
 
+  void _delete() {
+    Navigator.pop(context, const DeleteEvent());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('New Event'),
+        title: Text(_isEditing ? 'Edit Event' : 'New Event'),
         actions: [
+          if (_isEditing)
+            IconButton(
+              tooltip: 'Delete',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: _delete,
+            ),
           IconButton(
             tooltip: 'Save',
             icon: const Icon(Icons.check),

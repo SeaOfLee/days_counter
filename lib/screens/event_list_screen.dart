@@ -44,12 +44,26 @@ class _EventListScreenState extends State<EventListScreen> {
   ];
 
   Future<void> _addEvent() async {
-    final newEvent = await Navigator.push<DateEvent>(
+    final newEvent = await Navigator.push<Object?>(
       context,
       MaterialPageRoute(builder: (context) => const EventEditScreen()),
     );
-    if (newEvent != null) {
+    if (newEvent is DateEvent) {
       setState(() => _events.add(newEvent));
+    }
+  }
+
+  Future<void> _editEvent(DateEvent event) async {
+    final result = await Navigator.push<Object?>(
+      context,
+      MaterialPageRoute(builder: (context) => EventEditScreen(event: event)),
+    );
+    if (result is DateEvent) {
+      setState(() {
+        _events[_events.indexWhere((e) => e.id == event.id)] = result;
+      });
+    } else if (result is DeleteEvent) {
+      setState(() => _events.removeWhere((e) => e.id == event.id));
     }
   }
 
@@ -61,9 +75,10 @@ class _EventListScreenState extends State<EventListScreen> {
         padding: const EdgeInsets.all(16),
         itemCount: _events.length,
         itemBuilder: (context, index) {
+          final event = _events[index];
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
-            child: EventCard(event: _events[index]),
+            child: EventCard(event: event, onTap: () => _editEvent(event)),
           );
         },
       ),

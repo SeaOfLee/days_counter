@@ -55,4 +55,48 @@ void main() {
     expect(find.text('Enter a name for this event'), findsOneWidget);
     expect(find.text('Choose a date'), findsOneWidget);
   });
+
+  testWidgets('tapping an event opens the editor prepopulated for editing', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: EventListScreen()),
+    );
+
+    await tester.tap(find.text('Last Drink'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit Event'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'Event Name'), findsOneWidget);
+    expect(find.text('Last Drink'), findsOneWidget);
+    expect(find.text('June 19, 2023'), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Event Name'),
+      'Sobriety Anniversary',
+    );
+    await tester.tap(find.byTooltip('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit Event'), findsNothing);
+    expect(find.text('Sobriety Anniversary'), findsOneWidget);
+    expect(find.text('Last Drink'), findsNothing);
+  });
+
+  testWidgets('deleting an event removes it from the list', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: EventListScreen()),
+    );
+
+    await tester.tap(find.text('Last Drink'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit Event'), findsNothing);
+    expect(find.text('Last Drink'), findsNothing);
+  });
 }
