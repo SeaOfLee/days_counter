@@ -37,3 +37,23 @@ String formatDayCount(int days) {
   }
   return days < 0 ? '-$buffer' : buffer.toString();
 }
+
+const _monthNames = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+/// Formats a date as e.g. "June 19, 2023".
+String formatDate(DateTime date) {
+  return '${_monthNames[date.month - 1]} ${date.day}, ${date.year}';
+}

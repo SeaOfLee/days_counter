@@ -13,6 +13,9 @@ class EventCard extends StatelessWidget {
     final days = event.direction == CountDirection.since
         ? daysSince(event.date)
         : daysUntil(event.date);
+    final directionLabel = event.direction == CountDirection.since
+        ? 'Since ${formatDate(event.date)}'
+        : 'Until ${formatDate(event.date)}';
 
     return Card(
       child: Padding(
@@ -27,6 +30,11 @@ class EventCard extends StatelessWidget {
               style: Theme.of(context).textTheme.displayMedium,
             ),
             Text('days', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              directionLabel,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
           ],
         ),
       ),
