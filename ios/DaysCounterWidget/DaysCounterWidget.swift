@@ -10,7 +10,7 @@ import SwiftUI
 
 // Keep these in sync with the matching constants in AppDelegate.swift —
 // the two targets compile separately and can't share this definition.
-private let widgetAppGroupIdentifier = "group.com.example.daysCounter"
+private let widgetAppGroupIdentifier = "group.net.leerichardson.dayscounter"
 private let widgetFeaturedEventKey = "featuredEventPayload"
 
 private struct FeaturedEvent: Decodable {

@@ -60,14 +60,14 @@ The widget's `Provider.getTimeline` (Phase 14) now generates a real
 (June 19, 2023), normalized to start-of-day and using `.atEnd` as the
 reload policy, so the displayed day count advances automatically at
 midnight instead of staying frozen. Both targets now share the App
-Group `group.com.example.daysCounter` (Phase 15) — Runner's and the
+Group `group.net.leerichardson.dayscounter` (Phase 15) — Runner's and the
 widget extension's entitlements
 ([ios/Runner/Runner.entitlements](ios/Runner/Runner.entitlements),
 [ios/DaysCounterWidgetExtension.entitlements](ios/DaysCounterWidgetExtension.entitlements))
 both declare it under the same development team, confirmed by
 inspecting the signed binaries. The widget now renders real Flutter
 data (Phase 16): [lib/services/widget_bridge.dart](lib/services/widget_bridge.dart) calls a
-`MethodChannel` (`com.example.daysCounter/widget`) whose handler in
+`MethodChannel` (`net.leerichardson.dayscounter/widget`) whose handler in
 [ios/Runner/AppDelegate.swift](ios/Runner/AppDelegate.swift) writes the JSON payload into the App
 Group's `UserDefaults`; `EventsNotifier` (`build`/`saveEvent`/`deleteEvent`
 in [lib/providers/events_provider.dart](lib/providers/events_provider.dart)) awaits this sync on every
@@ -126,6 +126,24 @@ before any subsequent design/look-and-feel pass (which the user plans
 to handle themselves). Phases 21–22 (Configurable Widgets, Lock Screen
 Widgets) and the remaining "Post-V1 Learning Ideas" list are still
 fully optional — don't treat their numbers as an implicit next step.
+
+Phase 20 is underway: the placeholder bundle identifier
+(`com.example.daysCounter`) has been renamed throughout to
+`net.leerichardson.dayscounter` — Runner, RunnerTests, and the widget
+extension's `PRODUCT_BUNDLE_IDENTIFIER`s in
+`ios/Runner.xcodeproj/project.pbxproj`, the App Group in both
+`.entitlements` files (now `group.net.leerichardson.dayscounter`), and
+the widget-bridge `MethodChannel` name in
+[ios/Runner/AppDelegate.swift](ios/Runner/AppDelegate.swift),
+[lib/services/widget_bridge.dart](lib/services/widget_bridge.dart), and
+[test/fakes/widget_bridge_mock.dart](test/fakes/widget_bridge_mock.dart) (now
+`net.leerichardson.dayscounter/widget`). Confirmed building for the
+simulator; device builds need the user's Apple Developer Program
+enrollment (Individual, submitted, pending confirmation as of this
+writing) to finish processing before Xcode can provision the new App
+ID and App Group with Apple. Still to do in Phase 20: switch to a real
+app icon (still the default Flutter template one), App Store Connect
+app record/metadata, release signing, and archive/submit.
 Expect to be asked to work through the phases in
 [PROJECT_PLAN.md](PROJECT_PLAN.md) roughly in order.
 

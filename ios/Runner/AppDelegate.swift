@@ -4,8 +4,8 @@ import WidgetKit
 
 // Keep these in sync with the matching constants in DaysCounterWidget.swift —
 // the two targets compile separately and can't share this definition.
-private let widgetBridgeChannelName = "com.example.daysCounter/widget"
-private let widgetAppGroupIdentifier = "group.com.example.daysCounter"
+private let widgetBridgeChannelName = "net.leerichardson.dayscounter/widget"
+private let widgetAppGroupIdentifier = "group.net.leerichardson.dayscounter"
 private let widgetFeaturedEventKey = "featuredEventPayload"
 
 @main
