@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:days_counter/repositories/local_event_repository.dart';
 import 'package:days_counter/screens/event_list_screen.dart';
+
+Future<void> _pumpEventList(WidgetTester tester) async {
+  await tester.pumpWidget(
+    MaterialApp(home: EventListScreen(repository: LocalEventRepository())),
+  );
+  await tester.pump();
+}
 
 void main() {
   testWidgets('tapping + opens the editor, saving adds the event to the list', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: EventListScreen()),
-    );
+    await _pumpEventList(tester);
 
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
@@ -41,9 +47,7 @@ void main() {
   testWidgets('blank name is rejected by form validation', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: EventListScreen()),
-    );
+    await _pumpEventList(tester);
 
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
@@ -59,9 +63,7 @@ void main() {
   testWidgets('tapping an event opens the editor prepopulated for editing', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: EventListScreen()),
-    );
+    await _pumpEventList(tester);
 
     await tester.tap(find.text('Last Drink'));
     await tester.pumpAndSettle();
@@ -86,9 +88,7 @@ void main() {
   testWidgets('deleting an event removes it from the list', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: EventListScreen()),
-    );
+    await _pumpEventList(tester);
 
     await tester.tap(find.text('Last Drink'));
     await tester.pumpAndSettle();

@@ -5,7 +5,8 @@ import 'package:days_counter/app.dart';
 
 void main() {
   testWidgets('shows every in-memory event', (WidgetTester tester) async {
-    await tester.pumpWidget(const App());
+    await tester.pumpWidget(App());
+    await tester.pump();
 
     expect(find.text('Days'), findsOneWidget);
     expect(find.text('Last Drink'), findsOneWidget);

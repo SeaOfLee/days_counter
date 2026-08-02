@@ -1,47 +1,32 @@
 import 'package:flutter/material.dart';
 
 import '../models/date_event.dart';
+import '../repositories/event_repository.dart';
 import '../widgets/event_card.dart';
 import 'event_edit_screen.dart';
 
 class EventListScreen extends StatefulWidget {
-  const EventListScreen({super.key});
+  const EventListScreen({super.key, required this.repository});
+
+  final EventRepository repository;
 
   @override
   State<EventListScreen> createState() => _EventListScreenState();
 }
 
 class _EventListScreenState extends State<EventListScreen> {
-  final List<DateEvent> _events = [
-    DateEvent(
-      id: '1',
-      title: 'Last Drink',
-      date: DateTime(2023, 6, 19),
-      direction: CountDirection.since,
-      emoji: '🍺',
-    ),
-    DateEvent(
-      id: '2',
-      title: 'Started New Job',
-      date: DateTime(2025, 12, 6),
-      direction: CountDirection.since,
-      emoji: '💼',
-    ),
-    DateEvent(
-      id: '3',
-      title: 'Vacation',
-      date: DateTime(2026, 8, 19),
-      direction: CountDirection.until,
-      emoji: '✈️',
-    ),
-    DateEvent(
-      id: '4',
-      title: 'Anniversary',
-      date: DateTime(2026, 9, 12),
-      direction: CountDirection.until,
-      emoji: '💍',
-    ),
-  ];
+  List<DateEvent> _events = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents();
+  }
+
+  Future<void> _loadEvents() async {
+    final events = await widget.repository.getEvents();
+    setState(() => _events = events);
+  }
 
   Future<void> _addEvent() async {
     final newEvent = await Navigator.push<Object?>(
@@ -49,7 +34,8 @@ class _EventListScreenState extends State<EventListScreen> {
       MaterialPageRoute(builder: (context) => const EventEditScreen()),
     );
     if (newEvent is DateEvent) {
-      setState(() => _events.add(newEvent));
+      await widget.repository.saveEvent(newEvent);
+      await _loadEvents();
     }
   }
 
@@ -59,11 +45,11 @@ class _EventListScreenState extends State<EventListScreen> {
       MaterialPageRoute(builder: (context) => EventEditScreen(event: event)),
     );
     if (result is DateEvent) {
-      setState(() {
-        _events[_events.indexWhere((e) => e.id == event.id)] = result;
-      });
+      await widget.repository.saveEvent(result);
+      await _loadEvents();
     } else if (result is DeleteEvent) {
-      setState(() => _events.removeWhere((e) => e.id == event.id));
+      await widget.repository.deleteEvent(event.id);
+      await _loadEvents();
     }
   }
 
