@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../models/date_event.dart';
 import '../widgets/event_card.dart';
+import 'event_edit_screen.dart';
 
-class EventListScreen extends StatelessWidget {
+class EventListScreen extends StatefulWidget {
   const EventListScreen({super.key});
 
-  static final List<DateEvent> _events = [
+  @override
+  State<EventListScreen> createState() => _EventListScreenState();
+}
+
+class _EventListScreenState extends State<EventListScreen> {
+  final List<DateEvent> _events = [
     DateEvent(
       id: '1',
       title: 'Last Drink',
@@ -37,6 +43,16 @@ class EventListScreen extends StatelessWidget {
     ),
   ];
 
+  Future<void> _addEvent() async {
+    final newEvent = await Navigator.push<DateEvent>(
+      context,
+      MaterialPageRoute(builder: (context) => const EventEditScreen()),
+    );
+    if (newEvent != null) {
+      setState(() => _events.add(newEvent));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,6 +66,10 @@ class EventListScreen extends StatelessWidget {
             child: EventCard(event: _events[index]),
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addEvent,
+        child: const Icon(Icons.add),
       ),
     );
   }
