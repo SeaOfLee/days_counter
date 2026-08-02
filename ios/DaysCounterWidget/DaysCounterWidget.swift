@@ -110,9 +110,19 @@ struct SimpleEntry: TimelineEntry {
 }
 
 struct DaysCounterWidgetEntryView: View {
+    @Environment(\.widgetFamily) var family
     var entry: Provider.Entry
 
     var body: some View {
+        switch family {
+        case .systemMedium:
+            mediumBody
+        default:
+            smallBody
+        }
+    }
+
+    private var smallBody: some View {
         VStack(alignment: .leading) {
             Text(entry.title)
 
@@ -121,6 +131,23 @@ struct DaysCounterWidgetEntryView: View {
                     .font(.largeTitle)
 
                 Text("days")
+            }
+        }
+    }
+
+    private var mediumBody: some View {
+        HStack {
+            Text(entry.title)
+
+            Spacer()
+
+            if let dayCount = entry.dayCount {
+                VStack(alignment: .trailing) {
+                    Text(dayCount.formatted())
+                        .font(.largeTitle)
+
+                    Text("days")
+                }
             }
         }
     }
@@ -142,10 +169,18 @@ struct DaysCounterWidget: Widget {
         }
         .configurationDisplayName("Days Counter")
         .description("Shows the day count for a tracked event.")
+        .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
 
 #Preview(as: .systemSmall) {
+    DaysCounterWidget()
+} timeline: {
+    SimpleEntry(date: .now, title: "Last Drink", dayCount: 1139)
+    SimpleEntry(date: .now.addingTimeInterval(86400), title: "Last Drink", dayCount: 1140)
+}
+
+#Preview(as: .systemMedium) {
     DaysCounterWidget()
 } timeline: {
     SimpleEntry(date: .now, title: "Last Drink", dayCount: 1139)

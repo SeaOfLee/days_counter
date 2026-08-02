@@ -111,9 +111,17 @@ stable has since shipped a fix before assuming it's a regression here.
 Switching channels bumped `IPHONEOS_DEPLOYMENT_TARGET` from 13.0 to 15.0
 project-wide (an expected, harmless Flutter tooling migration).
 
-Next up is Phase 19: the widget currently has no `.supportedFamilies`
-restriction (and its layout is only really designed for `systemSmall`) —
-add explicit small/medium support with a layout that adapts to each.
+Phase 19 is done too: `DaysCounterWidgetEntryView` now branches on
+`@Environment(\.widgetFamily)`, with a `systemMedium` layout (title
+left, count+"days" right via `HStack`/`Spacer`) alongside the original
+`systemSmall` one, and `.supportedFamilies([.systemSmall, .systemMedium])`
+makes that explicit — both confirmed rendering cleanly on-device.
+
+**This completes every item in PROJECT_PLAN.md's "V1 Definition of
+Done."** All required phases (0–19) are done. Anything further should
+be treated as Post-V1 (Phases 20–21, or the "Post-V1 Learning Ideas"
+list) and only pursued if explicitly requested — don't treat later
+phase numbers as an implicit next step the way earlier phases were.
 Expect to be asked to work through the phases in
 [PROJECT_PLAN.md](PROJECT_PLAN.md) roughly in order.
 
