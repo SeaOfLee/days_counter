@@ -22,7 +22,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Days'), findsOneWidget);
+    expect(find.text('Dayward'), findsOneWidget);
     expect(find.textContaining('Last Drink'), findsOneWidget);
     expect(find.textContaining('Started New Job'), findsOneWidget);
 

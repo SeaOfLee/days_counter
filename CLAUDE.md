@@ -11,6 +11,12 @@ Flutter/Dart, Riverpod, local persistence, Xcode, Swift/SwiftUI, WidgetKit,
 App Groups, and signing/provisioning. Optimize for understanding over
 speed or polish.
 
+The app's user-facing name is **Dayward** (`CFBundleDisplayName`, the
+app bar title, the widget's `configurationDisplayName`) — this is
+distinct from the underlying Flutter project/package name
+(`days_counter`) and repo directory name, which stay as-is; don't
+"fix" that mismatch, it's intentional.
+
 The full phased build plan lives in [PROJECT_PLAN.md](PROJECT_PLAN.md).
 **Read it before starting non-trivial work** — it defines the current
 phase, the success criterion for that phase, and what's explicitly
@@ -149,9 +155,12 @@ own icon asset catalog
 (`ios/DaysCounterWidget/Assets.xcassets/AppIcon.appiconset/`, used for
 its gallery listing) is intentionally left empty for now — WidgetKit
 falls back to the app's icon, and it's not required for submission.
-Still to do in Phase 20: App Store Connect app record/metadata
-(name, category, age rating, privacy policy URL, screenshots),
-release signing, and archive/submit.
+The app is now branded "Dayward" throughout (`CFBundleDisplayName` in
+both Info.plists, the widget's `configurationDisplayName`, and the app
+bar title in [lib/screens/event_list_screen.dart](lib/screens/event_list_screen.dart)) — see the note under
+"What this is" above. Still to do in Phase 20: App Store Connect app
+record/metadata (name, category, age rating, privacy policy URL,
+screenshots), release signing, and archive/submit.
 Expect to be asked to work through the phases in
 [PROJECT_PLAN.md](PROJECT_PLAN.md) roughly in order.
 

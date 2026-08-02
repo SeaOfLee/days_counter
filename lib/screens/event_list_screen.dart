@@ -42,7 +42,7 @@ class EventListScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Days'),
+        title: const Text('Dayward'),
         actions: [
           IconButton(
             icon: const Icon(Icons.widgets_outlined),

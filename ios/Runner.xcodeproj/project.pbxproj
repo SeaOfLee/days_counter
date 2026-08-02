@@ -731,7 +731,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DaysCounterWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = DaysCounterWidget;
+				INFOPLIST_KEY_CFBundleDisplayName = "Dayward Widget";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -777,7 +777,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DaysCounterWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = DaysCounterWidget;
+				INFOPLIST_KEY_CFBundleDisplayName = "Dayward Widget";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -820,7 +820,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DaysCounterWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = DaysCounterWidget;
+				INFOPLIST_KEY_CFBundleDisplayName = "Dayward Widget";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
 				LD_RUNPATH_SEARCH_PATHS = (

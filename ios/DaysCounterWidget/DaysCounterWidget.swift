@@ -167,7 +167,7 @@ struct DaysCounterWidget: Widget {
                     .background()
             }
         }
-        .configurationDisplayName("Days Counter")
+        .configurationDisplayName("Dayward")
         .description("Shows the day count for a tracked event.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
