@@ -17,6 +17,9 @@ class EventCard extends StatelessWidget {
     final directionLabel = event.direction == CountDirection.since
         ? 'Since ${formatDate(event.date)}'
         : 'Until ${formatDate(event.date)}';
+    final title = event.emoji == null
+        ? event.title
+        : '${event.emoji} ${event.title}';
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -27,10 +30,7 @@ class EventCard extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                event.title,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
+              Text(title, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 16),
               Text(
                 formatDayCount(days),

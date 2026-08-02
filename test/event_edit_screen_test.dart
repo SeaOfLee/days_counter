@@ -73,7 +73,7 @@ void main() {
   ) async {
     await _pumpEventList(tester);
 
-    await tester.tap(find.text('Last Drink'));
+    await tester.tap(find.textContaining('Last Drink'));
     await tester.pumpAndSettle();
 
     expect(find.text('Edit Event'), findsOneWidget);
@@ -89,8 +89,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Edit Event'), findsNothing);
-    expect(find.text('Sobriety Anniversary'), findsOneWidget);
-    expect(find.text('Last Drink'), findsNothing);
+    expect(find.textContaining('Sobriety Anniversary'), findsOneWidget);
+    expect(find.textContaining('Last Drink'), findsNothing);
   });
 
   testWidgets('deleting an event removes it from the list', (
@@ -98,13 +98,13 @@ void main() {
   ) async {
     await _pumpEventList(tester);
 
-    await tester.tap(find.text('Last Drink'));
+    await tester.tap(find.textContaining('Last Drink'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Delete'));
     await tester.pumpAndSettle();
 
     expect(find.text('Edit Event'), findsNothing);
-    expect(find.text('Last Drink'), findsNothing);
+    expect(find.textContaining('Last Drink'), findsNothing);
   });
 }

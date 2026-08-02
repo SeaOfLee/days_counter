@@ -20,15 +20,15 @@ void main() {
     await tester.pump();
 
     expect(find.text('Days'), findsOneWidget);
-    expect(find.text('Last Drink'), findsOneWidget);
-    expect(find.text('Started New Job'), findsOneWidget);
+    expect(find.textContaining('Last Drink'), findsOneWidget);
+    expect(find.textContaining('Started New Job'), findsOneWidget);
 
     await tester.scrollUntilVisible(
-      find.text('Anniversary'),
+      find.textContaining('Anniversary'),
       300,
       scrollable: find.byType(Scrollable),
     );
-    expect(find.text('Vacation'), findsOneWidget);
-    expect(find.text('Anniversary'), findsOneWidget);
+    expect(find.textContaining('Vacation'), findsOneWidget);
+    expect(find.textContaining('Anniversary'), findsOneWidget);
   });
 }
