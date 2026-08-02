@@ -156,11 +156,36 @@ own icon asset catalog
 its gallery listing) is intentionally left empty for now — WidgetKit
 falls back to the app's icon, and it's not required for submission.
 The app is now branded "Dayward" throughout (`CFBundleDisplayName` in
-both Info.plists, the widget's `configurationDisplayName`, and the app
-bar title in [lib/screens/event_list_screen.dart](lib/screens/event_list_screen.dart)) — see the note under
-"What this is" above. Still to do in Phase 20: App Store Connect app
-record/metadata (name, category, age rating, privacy policy URL,
-screenshots), release signing, and archive/submit.
+both Info.plists, `MaterialApp.title`, the widget's
+`configurationDisplayName`, and the app bar title in
+[lib/screens/event_list_screen.dart](lib/screens/event_list_screen.dart)) — see the note under "What this
+is" above. `MaterialApp` also now sets `debugShowCheckedModeBanner:
+false` explicitly in [lib/app.dart](lib/app.dart) — harmless in real release builds (where
+it's already suppressed) but needed for clean App Store screenshots
+captured in debug mode, since Flutter only supports debug mode on iOS
+Simulator (release/profile require a physical device). The privacy
+policy is live at https://leerichardson.net/dayward-privacy/ (source
+saved to `~/Downloads/dayward-privacy-policy.md`) — the app has no
+networking code anywhere, so "Data Not Collected" is accurate for
+App Privacy questionnaire purposes. `app_store_assets/screenshots/`
+holds `iphone-6.9-event-list.png` (1320×2868, captured on an iPhone 17
+Pro Max simulator via `xcrun simctl io ... screenshot`, with
+`xcrun simctl status_bar ... override` for a clean 9:41/full-signal
+status bar) — one screenshot satisfies Apple's minimum; more can be
+added later the same way, though anything beyond the default launch
+screen needs coordinate-based tap automation (no proper UI-automation
+harness set up for this project).
+
+The user's Apple Developer Program enrollment is confirmed **paid**
+but still shows **Pending** on developer.apple.com and blocks App
+Store Connect access ("Your Apple Account isn't enabled for App Store
+Connect") — this is normal identity-verification processing (up to
+24–48 hours) with nothing to do but wait; don't treat it as a bug to
+fix. Still to do in Phase 20 once that clears: create the App Store
+Connect app record using the drafted content in
+[app_store_assets/metadata.md](app_store_assets/metadata.md) (name, subtitle, category, description,
+keywords, age rating, privacy answers, privacy policy URL, bundle ID),
+plus release signing and archive/submit.
 Expect to be asked to work through the phases in
 [PROJECT_PLAN.md](PROJECT_PLAN.md) roughly in order.
 
