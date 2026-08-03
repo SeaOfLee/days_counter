@@ -19,6 +19,14 @@ With a Home Screen widget
 (Changed from "Track days since & until" — that's now redundant with
 the app name above.)
 
+## Promotional Text (170 char max)
+
+Track the days that matter — since a big moment, until the next one.
+See your count right on your Home Screen with an auto-updating widget.
+
+(Unlike the rest of this metadata, promotional text can be updated any
+time without a new version submission — worth revisiting later.)
+
 ## Category
 
 Utilities
