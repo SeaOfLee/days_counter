@@ -59,3 +59,17 @@ https://leerichardson.net/dayward-privacy/
 ## Bundle ID
 
 net.leerichardson.dayscounter
+
+## Export Compliance
+
+Answer **No** — the app does not use encryption. Accurate: there's no
+networking code anywhere in the app, so no HTTPS/TLS or any other
+encryption is in play at all.
+
+## App Review Information (contact)
+
+- Name: Lee Richardson
+- Email: l.richardson1@gmail.com
+- Phone: [not drafted — need a number]
+
+No demo account needed; the app has no login/accounts.
