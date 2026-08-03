@@ -64,6 +64,14 @@ accounts, and no analytics/third-party SDKs.
 
 https://leerichardson.net/dayward-privacy/
 
+## Support URL
+
+https://leerichardson.net/dayward-support/
+
+(Source drafted to `~/Downloads/dayward-support.md` — getting
+started, adding the widget, FAQ, contact email. Not yet published;
+publish to that path once ready.)
+
 ## Bundle ID
 
 net.leerichardson.dayscounter
