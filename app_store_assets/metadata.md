@@ -5,11 +5,19 @@ Paste directly; adjust as needed.
 
 ## App name
 
-Dayward
+Dayward: Days Since & Until
+
+("Dayward" alone collided with an existing App Store listing —
+App Store names must be globally unique, unrelated to bundle ID or
+trademark. `CFBundleDisplayName` and the in-app branding stay just
+"Dayward"; only this store-listing field needed the qualifier.)
 
 ## Subtitle (30 char max)
 
-Track days since & until
+With a Home Screen widget
+
+(Changed from "Track days since & until" — that's now redundant with
+the app name above.)
 
 ## Category
 
