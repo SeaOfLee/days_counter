@@ -72,6 +72,10 @@ https://leerichardson.net/dayward-support/
 started, adding the widget, FAQ, contact email. Not yet published;
 publish to that path once ready.)
 
+## Copyright
+
+2026 Lee Richardson
+
 ## Bundle ID
 
 net.leerichardson.dayscounter

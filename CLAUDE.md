@@ -167,37 +167,61 @@ Simulator (release/profile require a physical device). The privacy
 policy is live at https://leerichardson.net/dayward-privacy/ (source
 saved to `~/Downloads/dayward-privacy-policy.md`) — the app has no
 networking code anywhere, so "Data Not Collected" is accurate for
-App Privacy questionnaire purposes. `app_store_assets/screenshots/`
-holds `iphone-6.7-event-list.png` (1284×2778, captured on an iPhone 13
-Pro Max simulator via `xcrun simctl io ... screenshot`, with
-`xcrun simctl status_bar ... override` for a clean 9:41/full-signal
-status bar) — one screenshot satisfies Apple's minimum; more can be
-added later the same way, though anything beyond the default launch
-screen needs coordinate-based tap automation (no proper UI-automation
-harness set up for this project).
+App Privacy questionnaire purposes.
 
-**Screenshot sizing gotcha**: App Store Connect rejected an initial
-1320×2868 screenshot (captured on the newest iPhone 17 Pro Max
-simulator) with "dimensions are wrong," accepting only
-1242×2688, 2688×1242, 1284×2778, or 2778×1284 — i.e. the older
-6.5"/6.7" device-class buckets, not the newest device's native
-resolution. Don't assume the latest simulator produces an
-Apple-accepted screenshot size; check App Store Connect's stated
-requirements first, and pick a simulator (e.g. iPhone 13 Pro Max for
-1284×2778) whose *native* resolution matches exactly, rather than
-resizing a screenshot after the fact and slightly distorting its
-aspect ratio.
+`app_store_assets/screenshots/` holds two, both captured via
+`xcrun simctl io ... screenshot` with `xcrun simctl status_bar ...
+override` for a clean 9:41/full-signal status bar:
+`iphone-6.7-event-list.png` (1284×2778, iPhone 13 Pro Max simulator)
+and `ipad-13-event-list.png` (2064×2752, iPad Pro 13-inch (M5)
+simulator) — the app is Universal (`TARGETED_DEVICE_FAMILY = "1,2"`
+for both targets, the unmodified Flutter default), so App Store
+Connect required an iPad screenshot too. The list screen has never
+been given iPad-specific layout treatment, but renders acceptably as
+full-width cards with no overflow — good enough to ship as-is.
+**Screenshot sizing gotcha**: don't assume the newest simulator
+produces an Apple-accepted size — an initial 1320×2868 iPhone 17 Pro
+Max screenshot was rejected; App Store Connect wants the older
+6.5"/6.7" iPhone buckets (1242×2688 or 1284×2778) and the 13-inch iPad
+bucket (2064×2752 or 2752×2064), not necessarily a new device's native
+resolution. Check App Store Connect's stated requirements first and
+pick a simulator whose *native* resolution matches exactly, rather
+than resizing after the fact and distorting the aspect ratio.
 
-The user's Apple Developer Program enrollment is confirmed **paid**
-but still shows **Pending** on developer.apple.com and blocks App
-Store Connect access ("Your Apple Account isn't enabled for App Store
-Connect") — this is normal identity-verification processing (up to
-24–48 hours) with nothing to do but wait; don't treat it as a bug to
-fix. Still to do in Phase 20 once that clears: create the App Store
-Connect app record using the drafted content in
-[app_store_assets/metadata.md](app_store_assets/metadata.md) (name, subtitle, category, description,
-keywords, age rating, privacy answers, privacy policy URL, bundle ID),
-plus release signing and archive/submit.
+Apple Developer Program enrollment cleared and App Store Connect
+access is unblocked. The app record was created — the name "Dayward"
+alone collided with an existing App Store listing (names must be
+globally unique, unrelated to bundle ID or trademark), so the store
+listing name is **"Dayward: Days Since & Until"** while
+`CFBundleDisplayName`/in-app branding stay plain "Dayward"; the
+subtitle and promotional text were adjusted to avoid redundancy with
+the longer name. All of this is captured in
+[app_store_assets/metadata.md](app_store_assets/metadata.md), which now also has Export Compliance
+(No — no encryption anywhere), App Review contact (name + email done;
+**phone number still needed** from the user), and Copyright ("2026
+Lee Richardson"). The Support URL
+(`https://leerichardson.net/dayward-support/`, source drafted to
+`~/Downloads/dayward-support.md`) follows the same pattern as the
+privacy policy but **is not yet published** — check before assuming
+it resolves.
+
+A release build was successfully archived and exported
+(`xcodebuild archive` / `-exportArchive` with automatic signing,
+method `app-store-connect`) — confirmed signed with an *Apple
+Distribution* certificate (not the Development one used for device
+testing), and uploaded to App Store Connect via Xcode Organizer.
+Command-line archives don't appear in Organizer automatically since
+they're built to a custom path outside Xcode's default
+`~/Library/Developer/Xcode/Archives/` location; copy the `.xcarchive`
+there (matching Xcode's `<scheme> <m-d-yy, h.mm a>.xcarchive` naming)
+if this needs doing again. Note the archive/build is labeled "Runner"
+in Organizer, not "Dayward" — that's the Xcode scheme name, unrelated
+to the app's display name, and fine to leave as-is.
+
+Remaining for Phase 20: publish the support page, get the App Review
+phone number, and finish filling in App Store Connect's submission
+page (build selection, screenshots, remaining metadata) before hitting
+Submit for Review.
 Expect to be asked to work through the phases in
 [PROJECT_PLAN.md](PROJECT_PLAN.md) roughly in order.
 
