@@ -168,13 +168,25 @@ policy is live at https://leerichardson.net/dayward-privacy/ (source
 saved to `~/Downloads/dayward-privacy-policy.md`) — the app has no
 networking code anywhere, so "Data Not Collected" is accurate for
 App Privacy questionnaire purposes. `app_store_assets/screenshots/`
-holds `iphone-6.9-event-list.png` (1320×2868, captured on an iPhone 17
+holds `iphone-6.7-event-list.png` (1284×2778, captured on an iPhone 13
 Pro Max simulator via `xcrun simctl io ... screenshot`, with
 `xcrun simctl status_bar ... override` for a clean 9:41/full-signal
 status bar) — one screenshot satisfies Apple's minimum; more can be
 added later the same way, though anything beyond the default launch
 screen needs coordinate-based tap automation (no proper UI-automation
 harness set up for this project).
+
+**Screenshot sizing gotcha**: App Store Connect rejected an initial
+1320×2868 screenshot (captured on the newest iPhone 17 Pro Max
+simulator) with "dimensions are wrong," accepting only
+1242×2688, 2688×1242, 1284×2778, or 2778×1284 — i.e. the older
+6.5"/6.7" device-class buckets, not the newest device's native
+resolution. Don't assume the latest simulator produces an
+Apple-accepted screenshot size; check App Store Connect's stated
+requirements first, and pick a simulator (e.g. iPhone 13 Pro Max for
+1284×2778) whose *native* resolution matches exactly, rather than
+resizing a screenshot after the fact and slightly distorting its
+aspect ratio.
 
 The user's Apple Developer Program enrollment is confirmed **paid**
 but still shows **Pending** on developer.apple.com and blocks App
