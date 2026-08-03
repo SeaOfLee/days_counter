@@ -218,10 +218,23 @@ if this needs doing again. Note the archive/build is labeled "Runner"
 in Organizer, not "Dayward" — that's the Xcode scheme name, unrelated
 to the app's display name, and fine to leave as-is.
 
-Remaining for Phase 20: publish the support page, get the App Review
-phone number, and finish filling in App Store Connect's submission
-page (build selection, screenshots, remaining metadata) before hitting
-Submit for Review.
+**Phase 20 is done — the app was submitted for App Store review**,
+satisfying its success criterion. Apple's review turnaround is
+typically 1–2 days but varies; approval/rejection is out of this
+project's hands. Two small loose ends from Phase 20 are still open,
+independent of the review outcome: the support page
+(`~/Downloads/dayward-support.md`) was drafted but **never confirmed
+published** at `https://leerichardson.net/dayward-support/` (unlike
+the privacy policy, which was verified live), and the App Review
+contact's **phone number** was never provided (name + email were).
+Neither blocks anything — just don't assume they're done without
+checking.
+
+With V1 (Phases 0–19) and Phase 20 both done, everything remaining is
+optional: Phases 21–22 (Configurable Widgets, Lock Screen Widgets),
+the "Post-V1 Learning Ideas" list, or the design/look-and-feel pass
+the user mentioned wanting to do themselves after Phase 20. Don't
+treat any of these as an implicit next step.
 Expect to be asked to work through the phases in
 [PROJECT_PLAN.md](PROJECT_PLAN.md) roughly in order.
 
