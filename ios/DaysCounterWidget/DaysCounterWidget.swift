@@ -158,38 +158,20 @@ struct DaysCounterWidgetEntryView: View {
     }
 
     private var smallBody: some View {
-        ZStack(alignment: .bottomTrailing) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(entry.title)
-                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+        VStack(alignment: .leading, spacing: 4) {
+            Text(entry.title)
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                .foregroundStyle(textMuted)
+                .lineLimit(1)
+
+            if let dayCount = entry.dayCount {
+                Text(dayCount.formatted())
+                    .font(.system(size: 34, weight: .heavy, design: .rounded))
+                    .foregroundStyle(textPrimary)
+                Text(dayCount == 1 ? "day" : "days")
+                    .font(.system(.caption, design: .rounded, weight: .semibold))
                     .foregroundStyle(textMuted)
-                    .lineLimit(1)
-
-                if let dayCount = entry.dayCount {
-                    Text(dayCount.formatted())
-                        .font(.system(size: 34, weight: .heavy, design: .rounded))
-                        .foregroundStyle(textPrimary)
-                    Text(dayCount == 1 ? "day" : "days")
-                        .font(.system(.caption, design: .rounded, weight: .semibold))
-                        .foregroundStyle(textMuted)
-
-                    if let dateLine = entry.dateLine {
-                        Rectangle()
-                            .fill(divider)
-                            .frame(height: 1)
-                            .padding(.vertical, 2)
-                        Text(dateLine)
-                            .font(.system(.caption2, design: .rounded, weight: .medium))
-                            .foregroundStyle(textMuted)
-                            .lineLimit(1)
-                    }
-                }
             }
-
-            Image("Mascot")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 40, height: 40)
         }
         .padding(16)
     }
