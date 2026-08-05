@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/date_event.dart';
 import '../providers/events_provider.dart';
+import '../theme/app_colors.dart';
 import '../widgets/event_card.dart';
 import 'event_edit_screen.dart';
 import 'featured_event_screen.dart';
@@ -58,12 +59,15 @@ class EventListScreen extends ConsumerWidget {
         data: (events) => events.isEmpty
             ? const _EmptyState()
             : ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 itemCount: events.length,
                 itemBuilder: (context, index) {
                   final event = events[index];
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.only(bottom: 12),
                     child: EventCard(
                       event: event,
                       onTap: () => _editEvent(context, ref, event),
@@ -88,16 +92,26 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.calendar_today_outlined,
-              size: 48,
-              color: colorScheme.onSurfaceVariant,
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceDark : AppColors.cardLavender,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.calendar_today_outlined,
+                size: 28,
+                color: AppColors.accent,
+              ),
             ),
             const SizedBox(height: 16),
             Text(

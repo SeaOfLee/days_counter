@@ -24,14 +24,15 @@ deferred. Do not jump ahead to a later phase's work (e.g. don't add
 Riverpod, persistence, or the WidgetKit extension) unless asked or unless
 the plan's current phase calls for it.
 
-A design reference image for the look-and-feel pass the user plans to
-do themselves (after Phase 20) is saved at
+A design/look-and-feel pass has since happened — see the note under
+"Current state" below. Two reference images live in `docs/`:
+[docs/dayward-widget-mockups.png](docs/dayward-widget-mockups.png) is
+the one actually used (purpose-built for this app, uses real event
+data, lavender/mascot palette).
 [docs/design-reference-dashboard.png](docs/design-reference-dashboard.png)
-— a finance-app dashboard mockup (card-based layout, dark green/light
-green palette) illustrating a visual style to draw from. It's a style
-reference only, not a spec — Dayward's actual screens (event list,
-event edit, featured event) are unrelated to the mockup's finance
-content.
+is an earlier, generic finance-dashboard mockup that was superseded
+once the widget-mockups image surfaced — kept for history, not a live
+reference.
 
 ## Current state
 
@@ -239,13 +240,72 @@ contact's **phone number** was never provided (name + email were).
 Neither blocks anything — just don't assume they're done without
 checking.
 
-With V1 (Phases 0–19) and Phase 20 both done, everything remaining is
-optional: Phases 21–22 (Configurable Widgets, Lock Screen Widgets),
-the "Post-V1 Learning Ideas" list, or the design/look-and-feel pass
-the user mentioned wanting to do themselves after Phase 20. Don't
-treat any of these as an implicit next step.
-Expect to be asked to work through the phases in
-@docs/PROJECT_PLAN.md roughly in order.
+With V1 (Phases 0–19) and Phase 20 both done, a design/look-and-feel
+pass (optional, post-V1) has also happened — see below. Everything
+else remaining is optional: Phases 21–22 (Configurable Widgets, Lock
+Screen Widgets) and the "Post-V1 Learning Ideas" list. Don't treat
+either as an implicit next step. Expect to be asked to work through
+the phases in @docs/PROJECT_PLAN.md roughly in order.
+
+**Design/look-and-feel pass (optional, post-V1) is done**, targeting
+[docs/dayward-widget-mockups.png](docs/dayward-widget-mockups.png) — a
+lavender palette with a cartoon calendar-page mascot. Only the single
+"finger up" mascot pose is used (per explicit user direction — the
+mockup's per-event custom poses, e.g. sunglasses for Vacation, flowers
+for Anniversary, were explicitly not wanted); source at
+`~/Downloads/dayward_character.png`, which turned out to already have
+a genuine alpha-transparent background (confirmed via ImageMagick
+pixel inspection — the olive vignette visible in casual previews was a
+rendering artifact, not real pixel data), so no vectorization or
+background removal was needed. **The mascot appears only on the iOS
+widget, not anywhere in the Flutter app** — another explicit user
+call, made after an initial pass had briefly included it on in-app
+event cards too.
+
+Design tokens live in [lib/theme/app_colors.dart](lib/theme/app_colors.dart) (palette constants,
+light + dark) and [lib/theme/app_theme.dart](lib/theme/app_theme.dart) (`ThemeData` built from
+them, including `CardTheme`/`AppBarTheme`/`FloatingActionButtonThemeData`/
+`InputDecorationTheme`/`SegmentedButtonThemeData`/`ListTileThemeData`
+overrides), wired into `MaterialApp.theme`/`darkTheme` in [lib/app.dart](lib/app.dart) —
+replacing the old `ColorScheme.fromSeed(seedColor: Colors.deepPurple)`
+placeholder. Typography uses the new `google_fonts` dependency
+(Quicksand) via `TextTheme` role reuse (`displayMedium` for the
+headline day-count number, `titleLarge`/`titleMedium`/`bodyMedium` for
+title/unit-label/date-line) rather than a bespoke theme-extension
+class. [lib/widgets/event_card.dart](lib/widgets/event_card.dart) was restructured from a centered
+column into a row (emoji badge circle, title + inline day-count), with
+its background color cycled deterministically across four pastel tints
+keyed by `event.id.hashCode` (not a stored field — `DateEvent` still
+has no `color` field, per the guiding principle of keeping the domain
+model small) in light mode, collapsing to one uniform dark surface
+color in dark mode (matching the mockup, which only shows one dark
+card style, not per-event dark tints). This card restructure changed
+`EventCard`'s title from an emoji-concatenated string to a bare
+`Text(event.title)`, which required scoping a `test/event_edit_screen_test.dart`
+finder to the `TextFormField` specifically (`find.descendant(...)`) —
+flagged here since it's the one place this pass touched test
+assertion logic rather than just rendering.
+
+On the widget side, [ios/DaysCounterWidget/DaysCounterWidget.swift](ios/DaysCounterWidget/DaysCounterWidget.swift) got
+inline Swift color constants mirroring the Dart hex values 1:1 (no
+shared code between the two targets — by design, Flutter owns the
+app, Swift owns only the widget), a `divider` rule + "Since/Until
+<date>" line that the widget previously didn't render at all, a
+`.system(design: .rounded, weight: .heavy)` font as the closest
+system-font approximation to Quicksand without bundling a custom font
+into the widget extension target, and a `@Environment(\.colorScheme)`-
+driven background swap (`.containerBackground` now uses the app's
+palette instead of the generic `.fill.tertiary` system material). The
+mascot lives in `ios/DaysCounterWidget/Assets.xcassets/Mascot.imageset/`
+(raster 1x/2x/3x PNGs generated via ImageMagick from the source
+character art, referenced as `Image("Mascot")`). None of the widget's
+`Provider`/`getTimeline`/`dayCount(for:on:)` date-math or App Group
+bridging changed — this pass was view-layer only. The full build
+(Runner + widget extension) compiles cleanly and all 35 Flutter tests
+pass; the widget's on-screen rendering itself (actually placing it on
+a Home Screen) needs a manual on-device/simulator check, since adding
+a widget requires interactive long-press-and-add UI that couldn't be
+automated in this session (no accessibility/UI-automation access).
 
 ## Guiding principles (from PROJECT_PLAN.md)
 

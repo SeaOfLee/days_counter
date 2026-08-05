@@ -32,9 +32,15 @@ class FeaturedEventScreen extends ConsumerWidget {
               }
             },
             child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               children: [
-                for (final event in events)
-                  RadioListTile<String>(value: event.id, title: Text(_eventLabel(event))),
+                for (final event in events) ...[
+                  RadioListTile<String>(
+                    value: event.id,
+                    title: Text(_eventLabel(event)),
+                  ),
+                  const SizedBox(height: 12),
+                ],
               ],
             ),
           );

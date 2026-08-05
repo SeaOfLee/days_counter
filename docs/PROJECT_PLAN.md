@@ -1357,6 +1357,18 @@ Do these only after V1 works.
 
 ---
 
+# Feature Ideas
+
+Possible future product features (distinct from the learning exercises
+above — these would need their own design/phase treatment before
+becoming plan work):
+
+- Swipable widgets — a single widget instance displays multiple dates,
+  swiping moves through them
+- Multiple featured dates
+
+---
+
 # Guiding Principles
 
 1. Build vertically rather than designing the entire architecture first.

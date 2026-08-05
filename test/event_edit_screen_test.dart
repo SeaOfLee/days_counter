@@ -81,7 +81,16 @@ void main() {
 
     expect(find.text('Edit Event'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, 'Event Name'), findsOneWidget);
-    expect(find.text('Last Drink'), findsOneWidget);
+    // EventCard now renders the title as a bare Text (no emoji
+    // concatenation), so the still-mounted list card behind this route
+    // also matches 'Last Drink' — scope to the edit form's field.
+    expect(
+      find.descendant(
+        of: find.byType(TextFormField),
+        matching: find.text('Last Drink'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('June 19, 2023'), findsOneWidget);
 
     await tester.enterText(
