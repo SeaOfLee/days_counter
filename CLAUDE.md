@@ -17,12 +17,21 @@ distinct from the underlying Flutter project/package name
 (`days_counter`) and repo directory name, which stay as-is; don't
 "fix" that mismatch, it's intentional.
 
-The full phased build plan lives in [PROJECT_PLAN.md](PROJECT_PLAN.md).
+The full phased build plan lives in @docs/PROJECT_PLAN.md.
 **Read it before starting non-trivial work** — it defines the current
 phase, the success criterion for that phase, and what's explicitly
 deferred. Do not jump ahead to a later phase's work (e.g. don't add
 Riverpod, persistence, or the WidgetKit extension) unless asked or unless
 the plan's current phase calls for it.
+
+A design reference image for the look-and-feel pass the user plans to
+do themselves (after Phase 20) is saved at
+[docs/design-reference-dashboard.png](docs/design-reference-dashboard.png)
+— a finance-app dashboard mockup (card-based layout, dark green/light
+green palette) illustrating a visual style to draw from. It's a style
+reference only, not a spec — Dayward's actual screens (event list,
+event edit, featured event) are unrelated to the mockup's finance
+content.
 
 ## Current state
 
@@ -236,7 +245,7 @@ the "Post-V1 Learning Ideas" list, or the design/look-and-feel pass
 the user mentioned wanting to do themselves after Phase 20. Don't
 treat any of these as an implicit next step.
 Expect to be asked to work through the phases in
-[PROJECT_PLAN.md](PROJECT_PLAN.md) roughly in order.
+@docs/PROJECT_PLAN.md roughly in order.
 
 ## Guiding principles (from PROJECT_PLAN.md)
 
@@ -319,7 +328,7 @@ be ignored.
 
 ## Working with the plan
 
-When picking up a task, identify which phase in [PROJECT_PLAN.md](PROJECT_PLAN.md) it
+When picking up a task, identify which phase in @docs/PROJECT_PLAN.md it
 corresponds to, check that phase's success criterion, and stop there
 rather than continuing into the next phase's scope. If a request
 conflicts with the plan's explicit "out of scope for V1" list, flag it
