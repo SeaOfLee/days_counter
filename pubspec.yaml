@@ -36,7 +36,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   path_provider: ^2.1.6
   flutter_riverpod: ^2.6.1
-  google_fonts: ^8.2.1
 
 dev_dependencies:
   flutter_test:
@@ -59,6 +58,22 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Quicksand (SIL Open Font License 1.1) is bundled rather than fetched at
+  # runtime by google_fonts, so the app makes no network requests at all and
+  # typography is identical offline and on first launch. These are the exact
+  # files google_fonts used to download.
+  fonts:
+    - family: Quicksand
+      fonts:
+        - asset: assets/fonts/Quicksand-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Quicksand-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Quicksand-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Quicksand-Bold.ttf
+          weight: 700
 
   # To add assets to your application, add an assets section, like this:
   # assets:

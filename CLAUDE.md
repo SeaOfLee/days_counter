@@ -178,16 +178,29 @@ policy is live at https://leerichardson.net/dayward-privacy/ (source
 saved to `~/Downloads/dayward-privacy-policy.md`) — the app has no
 accounts, analytics, or networking code of its own, so "Data Not
 Collected" is accurate for App Privacy questionnaire purposes. **One
-caveat**: `google_fonts` fetches Quicksand over HTTPS from
-`fonts.gstatic.com` on first launch, since the font isn't bundled as
-an asset (no `fonts:` section in `pubspec.yaml`, no `assets/` dir), so
-"no networking anywhere" — as this file and
-[app_store_assets/metadata.md](app_store_assets/metadata.md) both
-previously claimed — is not literally true. It doesn't change the
-questionnaire answers (see that file for the reasoning), and shipping
-1.0.1 with it was a deliberate call rather than an oversight: the
-build was already uploaded, and the risk didn't justify restarting
-review. Bundling the TTFs is planned for 1.0.2.
+caveat, now resolved**: the shipped 1.0.1 build fetched Quicksand over
+HTTPS from `fonts.gstatic.com` on first launch via `google_fonts`,
+since the font wasn't bundled — so "no networking anywhere" was not
+literally true for that build. It didn't change the questionnaire
+answers (see that file for the reasoning), and shipping 1.0.1 that way
+was a deliberate call: the build was already uploaded, and the risk
+didn't justify restarting review.
+
+**Since then the font has been bundled** and the `google_fonts`
+dependency removed entirely, so the claim is true again for anything
+built after 1.0.1. `assets/fonts/` holds the four static Quicksand
+weights the design uses (400/500/600/700) plus the OFL license the
+font's terms require; `pubspec.yaml` declares them under family
+`Quicksand`, and [lib/theme/app_theme.dart](lib/theme/app_theme.dart)
+sets `ThemeData.fontFamily` instead of calling `GoogleFonts`. The four
+explicitly-styled roles carry `fontFamily` themselves because
+`appBarTheme.titleTextStyle` reuses `titleLarge` directly, before
+`ThemeData` has applied the family to the text theme. The bundled TTFs
+are the exact files `google_fonts` had been downloading (recovered
+from a simulator's font cache), so this changed nothing visually — the
+rendered event list is pixel-identical to the committed store
+screenshot, verified with `magick compare` returning zero differing
+pixels.
 
 `app_store_assets/screenshots/` holds two, both captured via
 `xcrun simctl io ... screenshot` with `xcrun simctl status_bar ...

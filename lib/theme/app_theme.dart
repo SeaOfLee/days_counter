@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
@@ -9,6 +8,12 @@ class AppTheme {
   AppTheme._();
 
   static const _cardRadius = 20.0;
+
+  /// Bundled in `assets/fonts/` and declared in `pubspec.yaml`, rather than
+  /// fetched at runtime by the `google_fonts` package as it was before —
+  /// that made first launch depend on the network and contradicted the
+  /// app's "no networking" App Privacy answer.
+  static const _fontFamily = 'Quicksand';
 
   static ThemeData light() {
     final colorScheme = ColorScheme.fromSeed(
@@ -65,30 +70,36 @@ class AppTheme {
       borderRadius: BorderRadius.circular(12),
     );
 
-    final textTheme = GoogleFonts.quicksandTextTheme().copyWith(
-      displayMedium: GoogleFonts.quicksand(
+    // Only the four roles the design actually specifies are set here; the
+    // rest inherit Quicksand from ThemeData.fontFamily below. These carry
+    // fontFamily explicitly because appBarTheme reuses titleLarge directly,
+    // before ThemeData has applied the family to the text theme.
+    const textStyleFamily = _fontFamily;
+    final textTheme = TextTheme(
+      displayMedium: const TextStyle(
+        fontFamily: textStyleFamily,
         fontSize: 32,
         fontWeight: FontWeight.w700,
-        color: foreground,
-      ),
-      titleLarge: GoogleFonts.quicksand(
+      ).copyWith(color: foreground),
+      titleLarge: const TextStyle(
+        fontFamily: textStyleFamily,
         fontSize: 18,
         fontWeight: FontWeight.w600,
-        color: foreground,
-      ),
-      titleMedium: GoogleFonts.quicksand(
+      ).copyWith(color: foreground),
+      titleMedium: const TextStyle(
+        fontFamily: textStyleFamily,
         fontSize: 15,
         fontWeight: FontWeight.w500,
-        color: muted,
-      ),
-      bodyMedium: GoogleFonts.quicksand(
+      ).copyWith(color: muted),
+      bodyMedium: const TextStyle(
+        fontFamily: textStyleFamily,
         fontSize: 13,
         fontWeight: FontWeight.w500,
-        color: muted,
-      ),
+      ).copyWith(color: muted),
     );
 
     return ThemeData(
+      fontFamily: _fontFamily,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: scaffoldBackground,
       textTheme: textTheme,

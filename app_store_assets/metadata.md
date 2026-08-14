@@ -59,15 +59,15 @@ Answer **"Data Not Collected"** across the board. The app has no
 accounts, no analytics, and no first-party networking code of its own
 (verified via `grep -r "http\|Socket\|URLSession" lib/ ios/`).
 
-**Caveat, as of 1.0.1:** the `google_fonts` package fetches the
-Quicksand font over HTTPS from `fonts.gstatic.com` on first launch,
-because the font is not bundled as an asset — so the app is not
-literally network-free, and the device's IP address reaches Google in
-the course of that request. "Data Not Collected" still holds: the IP
-is transient request routing, not something this app collects, stores,
-or uses for tracking, advertising, or analytics. Bundling the
-Quicksand TTFs (planned for 1.0.2) removes the fetch and makes the
-no-networking claim literally true again.
+**Resolved after 1.0.1:** the shipped 1.0.1 build fetched the
+Quicksand font over HTTPS from `fonts.gstatic.com` on first launch via
+the `google_fonts` package, so it was not literally network-free, and
+the device's IP address reached Google in the course of that request.
+"Data Not Collected" held regardless: the IP was transient request
+routing, not something the app collects, stores, or uses for tracking,
+advertising, or analytics. The font is now bundled in `assets/fonts/`
+and the `google_fonts` dependency is gone, so builds after 1.0.1 make
+no network requests at all.
 
 ## Privacy Policy URL
 
@@ -78,8 +78,8 @@ https://leerichardson.net/dayward-privacy/
 https://leerichardson.net/dayward-support/
 
 (Source drafted to `~/Downloads/dayward-support.md` — getting
-started, adding the widget, FAQ, contact email. Not yet published;
-publish to that path once ready.)
+started, adding the widget, FAQ, contact email. Published and
+confirmed live.)
 
 ## Copyright
 
@@ -92,10 +92,10 @@ net.leerichardson.dayscounter
 ## Export Compliance
 
 Answer **No** — the app does not use encryption. It implements none of
-its own, and the one network request it does make (the `google_fonts`
-Quicksand fetch described above) is ordinary HTTPS, which falls under
-the standard exemption for using platform-provided TLS rather than
-implementing or bundling cryptography.
+its own. Builds after 1.0.1 make no network requests whatsoever; 1.0.1
+itself made one ordinary HTTPS font fetch, which fell under the
+standard exemption for platform-provided TLS rather than bundled or
+implemented cryptography.
 
 ## App Review Information (contact)
 
