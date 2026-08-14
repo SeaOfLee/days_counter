@@ -176,8 +176,18 @@ captured in debug mode, since Flutter only supports debug mode on iOS
 Simulator (release/profile require a physical device). The privacy
 policy is live at https://leerichardson.net/dayward-privacy/ (source
 saved to `~/Downloads/dayward-privacy-policy.md`) — the app has no
-networking code anywhere, so "Data Not Collected" is accurate for
-App Privacy questionnaire purposes.
+accounts, analytics, or networking code of its own, so "Data Not
+Collected" is accurate for App Privacy questionnaire purposes. **One
+caveat**: `google_fonts` fetches Quicksand over HTTPS from
+`fonts.gstatic.com` on first launch, since the font isn't bundled as
+an asset (no `fonts:` section in `pubspec.yaml`, no `assets/` dir), so
+"no networking anywhere" — as this file and
+[app_store_assets/metadata.md](app_store_assets/metadata.md) both
+previously claimed — is not literally true. It doesn't change the
+questionnaire answers (see that file for the reasoning), and shipping
+1.0.1 with it was a deliberate call rather than an oversight: the
+build was already uploaded, and the risk didn't justify restarting
+review. Bundling the TTFs is planned for 1.0.2.
 
 `app_store_assets/screenshots/` holds two, both captured via
 `xcrun simctl io ... screenshot` with `xcrun simctl status_bar ...
@@ -207,7 +217,9 @@ listing name is **"Dayward: Days Since & Until"** while
 subtitle and promotional text were adjusted to avoid redundancy with
 the longer name. All of this is captured in
 [app_store_assets/metadata.md](app_store_assets/metadata.md), which now also has Export Compliance
-(No — no encryption anywhere), App Review contact (name + email done;
+(No — the app implements no encryption; the `google_fonts` HTTPS fetch
+noted above is covered by the standard TLS exemption), App Review
+contact (name + email done;
 **phone number still needed** from the user), and Copyright ("2026
 Lee Richardson"). The Support URL
 (`https://leerichardson.net/dayward-support/`, source drafted to
