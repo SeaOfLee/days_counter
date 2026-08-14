@@ -20,9 +20,25 @@ void main() {
   }
 
   group('LocalEventRepository', () {
-    test('getEvents seeds example events on first run', () async {
+    /// Saves an event so tests that need existing data don't depend on
+    /// seed data — first run is intentionally empty.
+    Future<DateEvent> seedOne(
+      LocalEventRepository repository, {
+      String id = 'seed-1',
+    }) async {
+      final event = DateEvent(
+        id: id,
+        title: 'Seeded Event',
+        date: DateTime(2026, 3, 4),
+        direction: CountDirection.since,
+      );
+      await repository.saveEvent(event);
+      return event;
+    }
+
+    test('getEvents returns an empty list on first run', () async {
       final events = await makeRepository().getEvents();
-      expect(events, isNotEmpty);
+      expect(events, isEmpty);
     });
 
     test('saveEvent adds a new event by id', () async {
@@ -44,8 +60,8 @@ void main() {
 
     test('saveEvent overwrites an existing event with the same id', () async {
       final repository = makeRepository();
+      final existing = await seedOne(repository);
       final before = await repository.getEvents();
-      final existing = before.first;
 
       final updated = DateEvent(
         id: existing.id,
@@ -65,8 +81,8 @@ void main() {
 
     test('deleteEvent removes the event with the matching id', () async {
       final repository = makeRepository();
+      final target = await seedOne(repository);
       final before = await repository.getEvents();
-      final target = before.first;
 
       await repository.deleteEvent(target.id);
 

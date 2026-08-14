@@ -6,37 +6,6 @@ import 'package:path_provider/path_provider.dart';
 import '../models/date_event.dart';
 import 'event_repository.dart';
 
-List<DateEvent> _seedEvents() => [
-  DateEvent(
-    id: '1',
-    title: 'Last Drink',
-    date: DateTime(2023, 6, 19),
-    direction: CountDirection.since,
-    emoji: '🍺',
-  ),
-  DateEvent(
-    id: '2',
-    title: 'Started New Job',
-    date: DateTime(2025, 12, 6),
-    direction: CountDirection.since,
-    emoji: '💼',
-  ),
-  DateEvent(
-    id: '3',
-    title: 'Vacation',
-    date: DateTime(2026, 8, 19),
-    direction: CountDirection.until,
-    emoji: '✈️',
-  ),
-  DateEvent(
-    id: '4',
-    title: 'Anniversary',
-    date: DateTime(2026, 9, 12),
-    direction: CountDirection.until,
-    emoji: '💍',
-  ),
-];
-
 /// Persists events as a JSON file in the app's documents directory. The
 /// [directoryProvider] seam lets tests point this at a temp directory
 /// instead of going through the path_provider platform channel.
@@ -63,10 +32,11 @@ class LocalEventRepository implements EventRepository {
 
     final file = await _eventsFile();
     if (!await file.exists()) {
-      final seeded = _seedEvents();
-      _cache = seeded;
-      await _persist(seeded);
-      return seeded;
+      // First run: start empty so the user builds their own list. Must be a
+      // growable list — saveEvent mutates the cache in place.
+      final empty = <DateEvent>[];
+      _cache = empty;
+      return empty;
     }
 
     final contents = await file.readAsString();

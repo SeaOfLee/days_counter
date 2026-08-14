@@ -99,7 +99,7 @@ private func loadFeaturedEvent() -> FeaturedEvent? {
 
 struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), title: "Last Drink", dayCount: 1139, dateLine: "Since June 19, 2023")
+        SimpleEntry(date: Date(), title: "🎉 Birthday", dayCount: 42, dateLine: "Until June 19")
     }
 
     func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
@@ -251,13 +251,13 @@ struct DaysCounterWidget: Widget {
 #Preview(as: .systemSmall) {
     DaysCounterWidget()
 } timeline: {
-    SimpleEntry(date: .now, title: "Last Drink", dayCount: 1139, dateLine: "Since June 19, 2023")
-    SimpleEntry(date: .now.addingTimeInterval(86400), title: "Last Drink", dayCount: 1140, dateLine: "Since June 19, 2023")
+    SimpleEntry(date: .now, title: "🎉 Birthday", dayCount: 42, dateLine: "Until June 19")
+    SimpleEntry(date: .now.addingTimeInterval(86400), title: "🎉 Birthday", dayCount: 41, dateLine: "Until June 19")
 }
 
 #Preview(as: .systemMedium) {
     DaysCounterWidget()
 } timeline: {
-    SimpleEntry(date: .now, title: "Last Drink", dayCount: 1139, dateLine: "Since June 19, 2023")
-    SimpleEntry(date: .now.addingTimeInterval(86400), title: "Last Drink", dayCount: 1140, dateLine: "Since June 19, 2023")
+    SimpleEntry(date: .now, title: "🎉 Birthday", dayCount: 42, dateLine: "Until June 19")
+    SimpleEntry(date: .now.addingTimeInterval(86400), title: "🎉 Birthday", dayCount: 41, dateLine: "Until June 19")
 }
