@@ -219,13 +219,12 @@ the longer name. All of this is captured in
 [app_store_assets/metadata.md](app_store_assets/metadata.md), which now also has Export Compliance
 (No — the app implements no encryption; the `google_fonts` HTTPS fetch
 noted above is covered by the standard TLS exemption), App Review
-contact (name + email done;
-**phone number still needed** from the user), and Copyright ("2026
-Lee Richardson"). The Support URL
+contact, and Copyright ("2026 Lee Richardson"). Both of the loose ends
+that used to be flagged here are now closed: the Support URL
 (`https://leerichardson.net/dayward-support/`, source drafted to
-`~/Downloads/dayward-support.md`) follows the same pattern as the
-privacy policy but **is not yet published** — check before assuming
-it resolves.
+`~/Downloads/dayward-support.md`) is confirmed live, and the App Review
+contact phone number was entered directly in App Store Connect (it is
+deliberately not recorded in the repo).
 
 A release build was successfully archived and exported
 (`xcodebuild archive` / `-exportArchive` with automatic signing,
@@ -243,14 +242,17 @@ to the app's display name, and fine to leave as-is.
 **Phase 20 is done — the app was submitted for App Store review**,
 satisfying its success criterion. Apple's review turnaround is
 typically 1–2 days but varies; approval/rejection is out of this
-project's hands. Two small loose ends from Phase 20 are still open,
-independent of the review outcome: the support page
-(`~/Downloads/dayward-support.md`) was drafted but **never confirmed
-published** at `https://leerichardson.net/dayward-support/` (unlike
-the privacy policy, which was verified live), and the App Review
-contact's **phone number** was never provided (name + email were).
-Neither blocks anything — just don't assume they're done without
-checking.
+project's hands.
+
+**Version 1.0.1 (build 3) was submitted on 2026-08-13**, superseding
+the first submission. It carries the no-seed-data change, the new
+launch screen, the de-personalized widget gallery placeholder, and
+freshly captured screenshots. Both of Phase 20's old loose ends are
+closed: the support page is live and the App Review phone number was
+entered in App Store Connect. Verified before submitting: a clean
+release build of that exact source renders correctly on the physical
+iPhone (iOS 26.6), and the exported IPA is signed *Apple
+Distribution* with app and widget extension both at `1.0.1 (3)`.
 
 With V1 (Phases 0–19) and Phase 20 both done, a design/look-and-feel
 pass (optional, post-V1) has also happened — see below. Everything

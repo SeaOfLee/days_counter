@@ -101,6 +101,7 @@ implementing or bundling cryptography.
 
 - Name: Lee Richardson
 - Email: l.richardson1@gmail.com
-- Phone: [not drafted — need a number]
+- Phone: entered directly in App Store Connect (deliberately not
+  recorded here)
 
 No demo account needed; the app has no login/accounts.
