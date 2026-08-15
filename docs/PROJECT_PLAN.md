@@ -1330,7 +1330,28 @@ Anniversary
 ...
 ```
 
+**Phase 21 is done.** Verified on a physical iPhone: two widgets configured
+to different events, stacked, swiping between them shows each event's own
+count. The notes below are kept as the record of how it was approached and
+what the traps were.
+
 ### 21a — Build-system spike (do this first)
+
+**Outcome: the cycle is gone.** Enabling extraction on the widget
+extension's three configs only — step 1 of the ladder below — built clean,
+so Runner's three flags and the build phase order were never touched. Four
+builds confirmed it: `xcodebuild` Debug for simulator, `xcodebuild` Release
+for device, `flutter build ios --simulator --debug`, and
+`flutter build ios --release --no-codesign`. The emitted
+`Metadata.appintents/extract.actionsdata` really did contain
+`SelectEventIntent` and `EventEntity`, ruling out a green build from
+extraction silently no-op'ing.
+
+**Correction to the build loop below:** Release *cannot* be checked against
+a simulator at all, regardless of App Intents — Flutter fails it with
+"release/profile builds are only supported for physical devices". Use
+`-destination 'generic/platform=iOS'` with `CODE_SIGNING_ALLOWED=NO`;
+cycle detection happens at build-planning time, so signing is irrelevant.
 
 `ENABLE_APP_INTENTS_METADATA_EXTRACTION = NO` is currently set on every
 build configuration of both Runner and DaysCounterWidgetExtension. That
@@ -1618,7 +1639,18 @@ Success criterion:
 
 Two Dayward widgets are placed, configured to different events via Edit
 Widget, and stacked — swiping the stack moves between them, each showing
-its own correct day count.
+its own correct day count. **Met.**
+
+### 21h — Stacking, for the record
+
+Stacking is pure OS behavior, but two details are easy to trip on and
+neither is discoverable: **both widgets must be the same family** (small
+onto small, medium onto medium) or iOS silently refuses the drop, and
+**Edit Widget on a stack edits whichever widget is currently visible**, not
+the stack. Long-press the stack → Edit Stack also exposes Smart Rotate and
+Widget Suggestions, both on by default; for day counters they add noise and
+are worth turning off. A stack holds up to 10 widgets, so one stack can
+carry a whole set of events.
 
 ## Phase 22 — Lock Screen Widgets
 

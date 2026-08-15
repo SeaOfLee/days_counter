@@ -274,23 +274,60 @@ pass (optional, post-V1) has also happened — see below. Expect to be
 asked to work through the phases in @docs/PROJECT_PLAN.md roughly in
 order.
 
-**Five feature requests have since been folded into the plan** (planned
-2026-08-15, none implemented yet):
+**Five feature requests were folded into the plan** on 2026-08-15.
 
-- **Phase 21 (Configurable Widgets) was rewritten** to absorb two of
-  them: "widget can swipe through multiple events" and "multiple
-  featured events". WidgetKit has no swipe or pan gesture API at all —
-  the swipe people picture is the OS-level widget *stack*, so all this
-  app must supply is per-instance configuration via App Intents, which
-  is what Phase 21 already was. The same work **deletes the
-  featured-event concept from Phase 18** (provider, screen, repository
-  methods, `featured_event_id.txt`, and the app bar action) rather than
-  extending it to a list, since per-instance config makes a single
-  globally featured event redundant. Phase 18 is marked superseded in
-  place. Note this phase reopens the `ENABLE_APP_INTENTS_METADATA_EXTRACTION`
-  build-cycle landmine documented above — the phase opens with a spike
-  to find out, and a flag flip *without* a real intent in the target is
-  a false negative.
+**Phase 21 (Configurable Widgets) is done** — it absorbed two of them,
+"widget can swipe through multiple events" and "multiple featured
+events". WidgetKit has no swipe or pan gesture API at all; the swipe
+people picture is the OS-level widget *stack*, so all the app had to
+supply was per-instance configuration via App Intents. Confirmed on a
+physical iPhone: two widgets configured to different events, stacked,
+swiping between them.
+
+What this changed:
+
+- `ios/DaysCounterWidget/` gained
+  [SelectEventIntent.swift](ios/DaysCounterWidget/SelectEventIntent.swift)
+  (`EventEntity` + `EntityQuery` + `WidgetConfigurationIntent`) and
+  [WidgetEventStore.swift](ios/DaysCounterWidget/WidgetEventStore.swift)
+  (shared-list decoding plus the date math moved out of
+  `DaysCounterWidget.swift`, since the entity query needs it too). Those
+  helpers had to drop `private` — at file scope in Swift that means
+  file-private. That directory is a `PBXFileSystemSynchronizedRootGroup`,
+  so new `.swift` files join the target automatically with no pbxproj
+  edit.
+- `Provider` is now an `AppIntentTimelineProvider` and the widget an
+  `AppIntentConfiguration`. `kind` stayed `"DaysCounterWidget"` so
+  already-placed widgets survived the switch. The intent's `@Parameter`
+  is deliberately optional — a non-optional one changes migration
+  behavior, and optionality is what produces the "Choose an event" state.
+- The bridge now sends the **whole event list**, not one event:
+  `WidgetBridge.updateEvents` writes a JSON array under a new
+  `eventsPayload` key, and always sends a string (`"[]"` when empty) so
+  the widget can tell "no events" from "never synced".
+- **The featured-event concept from Phase 18 is deleted** — provider,
+  screen, both repository methods, and the app bar action. Phase 18 is
+  marked superseded in place. `featured_event_id.txt` is left orphaned on
+  existing installs rather than inventing a one-shot migration.
+  `EventsNotifier` no longer reads `featuredEventIdProvider`, which also
+  removed a latent two-way provider dependency.
+- **`ENABLE_APP_INTENTS_METADATA_EXTRACTION` is back on, widget target
+  only** (Runner's three configs stay `NO`, and the Phase 13 build-phase
+  reorder was never touched). The Xcode 26 cycle did not return. If this
+  ever needs re-testing: flipping the flag *without* real App Intents
+  symbols in the target is a false negative, since the extraction task
+  becomes a no-op and never creates the edges that cycle. Also note
+  Release cannot be built against a simulator at all — Flutter rejects it
+  — so use `-destination 'generic/platform=iOS'` with
+  `CODE_SIGNING_ALLOWED=NO`.
+- [test/widget_bridge_sync_test.dart](test/widget_bridge_sync_test.dart)
+  covers the payload contract, including that event order survives to the
+  widget (nothing guarded that before) and that an empty list serializes
+  as `"[]"`. `widget_bridge_mock.dart` gained a recording variant; the
+  plain no-op one is still required in every widget test's `setUp`.
+
+The remaining three requests are **not** implemented:
+
 - **Phase 23** — dark-mode readability on the event editor. Every cause
   is in [lib/theme/app_theme.dart](lib/theme/app_theme.dart), not the
   screen: `ColorScheme.copyWith` overrides colors without their paired
@@ -308,7 +345,7 @@ order.
 
 Phase 22 (Lock Screen Widgets) and the "Post-V1 Learning Ideas" list
 remain optional and unrequested — 22's number puts it before 23–25 but
-its priority does not.
+its priority does not. **Next requested phase is 23.**
 
 **Design/look-and-feel pass (optional, post-V1) is done**, targeting
 [docs/dayward-widget-mockups.png](docs/dayward-widget-mockups.png) — a
