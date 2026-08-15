@@ -1823,6 +1823,29 @@ ordering test — plus a widget test driving a drag.
 
 ## Phase 25 — Relative Day Entry
 
+**Done**, and it grew one unplanned change: **the Since/Until toggle was
+removed.** Direction is now inferred on save — a future date counts down,
+anything else counts up — because once the date is chosen, asking which way
+to count is redundant.
+
+`CountDirection` and `DateEvent.direction` **stay**, computed rather than
+asked for. That keeps the model, JSON, App Group payload, and the Swift
+widget's `dayCount(for:on:)` untouched, and leaves a seam if an explicit
+override is ever wanted. Dropping the field outright would have been a
+cross-target change for no user-visible gain.
+
+Two consequences worth knowing:
+
+- An `until` event whose date has already passed used to keep rendering a
+  negative count (`formatDayCount` preserves the minus sign deliberately).
+  It now becomes a `since` event the next time it is saved.
+- Today is ambiguous — 0 days either way — and falls to `since`.
+
+Inference removed the toggle that "in days" mode needed for its own
+direction, so that mode has an **Ago / From now** control instead. The
+offset is never stored: it resolves to a date immediately, so nothing
+downstream knows it was used.
+
 Let the user enter a date as "N days from today" instead of picking one
 off a calendar, e.g. counting down to a 100-day mark.
 

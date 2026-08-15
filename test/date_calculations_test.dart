@@ -116,6 +116,61 @@ void main() {
     });
   });
 
+  group('dateOffsetBy', () {
+    test('counts forwards', () {
+      expect(
+        dateOffsetBy(100, now: DateTime(2026, 8, 15)),
+        DateTime(2026, 11, 23),
+      );
+    });
+
+    test('counts backwards for a negative offset', () {
+      expect(
+        dateOffsetBy(-100, now: DateTime(2026, 8, 15)),
+        DateTime(2026, 5, 7),
+      );
+    });
+
+    test('zero is today', () {
+      expect(
+        dateOffsetBy(0, now: DateTime(2026, 8, 15, 13, 45)),
+        DateTime(2026, 8, 15),
+      );
+    });
+
+    test('rolls over a month boundary', () {
+      expect(dateOffsetBy(1, now: DateTime(2026, 1, 31)), DateTime(2026, 2, 1));
+    });
+
+    test('rolls over a year boundary', () {
+      expect(dateOffsetBy(1, now: DateTime(2026, 12, 31)), DateTime(2027, 1, 1));
+    });
+
+    test('handles a leap day', () {
+      expect(dateOffsetBy(1, now: DateTime(2028, 2, 28)), DateTime(2028, 2, 29));
+    });
+
+    test('crossing DST lands on the intended calendar date', () {
+      // US DST began 2026-03-08. Adding a Duration of 1 day to local
+      // midnight here yields 2026-03-08 23:00 the previous day in some
+      // zones; overflowing the day field cannot drift like that.
+      expect(dateOffsetBy(1, now: DateTime(2026, 3, 7)), DateTime(2026, 3, 8));
+      expect(dateOffsetBy(1, now: DateTime(2026, 10, 31)), DateTime(2026, 11, 1));
+    });
+
+    test('round-trips with daysUntil', () {
+      final now = DateTime(2026, 8, 15);
+      final target = dateOffsetBy(100, now: now);
+      expect(daysUntil(target, now: now), 100);
+    });
+
+    test('round-trips with daysSince', () {
+      final now = DateTime(2026, 8, 15);
+      final target = dateOffsetBy(-100, now: now);
+      expect(daysSince(target, now: now), 100);
+    });
+  });
+
   group('formatDayCount', () {
     test('adds thousands separators', () {
       expect(formatDayCount(1139), '1,139');

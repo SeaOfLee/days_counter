@@ -375,16 +375,28 @@ corners, so it's overridden with a transparent one. Covered by
 moved in **steps**, not one big `moveBy`, or the list never registers a
 swap.
 
-The remaining request is **not** implemented:
+**Phase 25 (relative day entry) is done — all five requests are now
+implemented.** The editor offers "On a date" or "In days"; the offset
+resolves to a real date immediately via `dateOffsetBy` in
+[lib/utils/date_calculations.dart](lib/utils/date_calculations.dart), so
+nothing downstream knows it was used. That helper overflows the day field
+(`DateTime(y, m, d + n)`) rather than adding a `Duration`, which would
+drift across DST.
 
-- **Phase 25** — relative day entry ("100 days from today" as an
-  alternative to the date picker). Input convenience only; no model,
-  serialization, or Swift change.
+This phase also **removed the Since/Until toggle** (user's call, made
+mid-phase): direction is inferred on save — future date counts down,
+otherwise counts up, today falls to `since`. **`CountDirection` and
+`DateEvent.direction` were deliberately kept**, computed rather than
+asked for, so the model, JSON, App Group payload, and the Swift
+`dayCount(for:on:)` are all untouched. Consequence to remember: an
+`until` event whose date has passed used to render a negative count, and
+now flips to `since` the next time it's saved. Since inference took away
+the toggle that "In days" needed, that mode has its own **Ago / From
+now** control.
 
-Phase 22 (Lock Screen Widgets) and the "Post-V1 Learning Ideas" list
-remain optional and unrequested — 22's number puts it before 23–25 but
-its priority does not. **Next requested phase is 25** (relative day
-entry), the last of the five.
+**All five requested features are done and nothing is queued.** Phase 22
+(Lock Screen Widgets) and the "Post-V1 Learning Ideas" list remain
+optional and unrequested — don't treat them as an implicit next step.
 
 **Design/look-and-feel pass (optional, post-V1) is done**, targeting
 [docs/dayward-widget-mockups.png](docs/dayward-widget-mockups.png) — a

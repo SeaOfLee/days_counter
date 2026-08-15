@@ -20,6 +20,18 @@ int daysUntil(DateTime date, {DateTime? now}) {
   return differenceInCalendarDays(now ?? DateTime.now(), date);
 }
 
+/// The calendar date [days] away from [now]; negative counts backwards.
+///
+/// Overflows the day field rather than adding a Duration — Dart normalizes
+/// `DateTime(2026, 1, 40)` correctly, whereas `Duration(days: n)` adds fixed
+/// 24-hour blocks and so drifts by an hour across a DST boundary, which is
+/// exactly what the rest of this file exists to avoid. Returns a local date,
+/// matching what the date picker produces.
+DateTime dateOffsetBy(int days, {DateTime? now}) {
+  final from = now ?? DateTime.now();
+  return DateTime(from.year, from.month, from.day + days);
+}
+
 String dayCountLabel(int days) {
   final formatted = formatDayCount(days);
   return days == 1 ? '$formatted day' : '$formatted days';
