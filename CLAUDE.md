@@ -525,6 +525,27 @@ This project's `pubspec.yaml` targets Dart SDK `^3.12.2`. There is no
 Android CI/build expectation — Android warnings from `flutter doctor` can
 be ignored.
 
+## Releasing
+
+**Read [README.md](README.md)'s "Releasing to the App Store" before doing
+any release work** — bumping the version, refreshing screenshots,
+archiving, uploading, or submitting. It is the single source of truth for
+that process; don't re-derive the steps here or anywhere else, and update
+it in place when something changes.
+
+It covers the traps that are easy to get wrong and expensive to discover
+late: `Generated.xcconfig` is not regenerated from `pubspec.yaml` by
+Archive or `flutter pub get` (run `flutter build ios --config-only`
+first); the widget extension's version comes from `MARKETING_VERSION`/
+`CURRENT_PROJECT_VERSION` in the pbxproj rather than `pubspec.yaml`, and
+a mismatch trips `ITMS-90473` on upload; verify shipped versions from the
+built bundles, not the project file; and confirm the export is signed
+*Apple Distribution*, not *Apple Development*.
+
+Current release state: the App Store has **1.0.1 (build 3)**. Everything
+from the five post-1.0.1 features (Phases 21, 23, 24, 25) is unreleased,
+so the next submission needs a version bump.
+
 ## Testing expectations
 
 - Date-calculation logic (`utils/date_calculations.dart`) needs real unit
