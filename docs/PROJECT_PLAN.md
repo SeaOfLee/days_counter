@@ -1671,6 +1671,27 @@ A useful additional WidgetKit learning exercise but not required.
 
 ## Phase 23 — Dark-Mode Readability on the Event Editor
 
+**Done.** All fixes landed in `lib/theme/app_theme.dart` and
+`lib/theme/app_colors.dart`; the editor itself was not touched, which was
+the point.
+
+Two findings worth keeping. First, the root cause was broader than "some
+colors are dim": `ColorScheme.copyWith` was overriding `primary` and
+`surface` without their `on*` counterparts, so those foregrounds stayed at
+whatever `fromSeed` derived for *its* palette. Every overridden role is now
+paired. Second, the accent turned out to be the real offender — white text
+on `#B49CE8` measures about **2.4:1**, so the selected segment label and the
+FAB's "+" both failed badly. A new `onAccent` ink (~7:1) replaces white on
+every accent surface. That last change is visible outside the editor, on the
+FAB.
+
+Measured pairs that were failing, now fixed: form labels on the input fill
+were ~4.1:1 dark and ~3.1:1 light (new `textLabel`/`textLabelDark` tokens
+bring both above 4.5:1); `bodyLarge` — what `TextField` input text actually
+resolves to — was never defined at all and fell back to a Material default.
+
+The original problem statement follows.
+
 The New/Edit Event screen is hard to read in dark mode. Nothing in
 `lib/screens/event_edit_screen.dart` sets colors or text styles of its
 own, so every cause lives in `lib/theme/app_theme.dart`:

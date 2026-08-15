@@ -326,15 +326,40 @@ What this changed:
   as `"[]"`. `widget_bridge_mock.dart` gained a recording variant; the
   plain no-op one is still required in every widget test's `setUp`.
 
-The remaining three requests are **not** implemented:
+**Phase 23 (dark-mode readability on the event editor) is also done.**
+Every fix is in [lib/theme/app_theme.dart](lib/theme/app_theme.dart) and
+[lib/theme/app_colors.dart](lib/theme/app_colors.dart) —
+`event_edit_screen.dart` was deliberately not touched, since it sets no
+colors of its own and a theme-level fix covers every screen. What
+changed:
 
-- **Phase 23** — dark-mode readability on the event editor. Every cause
-  is in [lib/theme/app_theme.dart](lib/theme/app_theme.dart), not the
-  screen: `ColorScheme.copyWith` overrides colors without their paired
-  `on*` roles, there's no `DatePickerThemeData`, `bodyLarge` (the actual
-  `TextField` input style) is never defined, and unselected
-  `SegmentedButton` segments are muted-on-card against a nearly
-  identical scaffold.
+- **`ColorScheme.copyWith` now pairs every overridden role with its
+  `on*` counterpart.** Overriding `primary`/`surface` alone left those
+  foregrounds at values `fromSeed` derived for its own generated
+  palette. This was the systemic cause, not just dim colors.
+- **New `AppColors.onAccent` (`#241F33`) replaces white on every accent
+  surface.** White on `#B49CE8` measures ~2.4:1 — the selected segment
+  label and the FAB "+" both failed. Note this makes the **FAB visibly
+  different outside the editor**; it was the same root cause, so it was
+  fixed rather than left inconsistent.
+- **New `textLabel`/`textLabelDark` for form labels.** `textMuted` is
+  tuned for card backgrounds; on the input fill it measured ~3.1:1 light
+  and ~4.1:1 dark.
+- **`bodyLarge` is now defined** — `TextField` input text and
+  `InputDecorator` children resolve to it, and it had no definition at
+  all, so typed text used a Material default.
+- Added `DatePickerThemeData` (the stock `showDatePicker` had no theme
+  and rendered wholly from seed-derived roles), `errorBorder`/
+  `focusedErrorBorder`/`errorStyle`, `textSelectionTheme`, and a `side`
+  border on `SegmentedButton` — in dark mode `cardColor` and the
+  scaffold are near-identical, so the unselected half read as empty
+  space.
+
+Verified by rendering the editor and the date picker as throwaway
+goldens (deleted afterwards) plus a dark-mode simulator screenshot;
+`flutter test`/`analyze` alone can't confirm a readability fix.
+
+The remaining two requests are **not** implemented:
 - **Phase 24** — drag/drop reordering. Needs **no** `sortOrder` field:
   order is already just array position in `events.json`. It does need a
   bulk-order method on `EventRepository`, since `getEvents()` returns an
@@ -345,7 +370,8 @@ The remaining three requests are **not** implemented:
 
 Phase 22 (Lock Screen Widgets) and the "Post-V1 Learning Ideas" list
 remain optional and unrequested — 22's number puts it before 23–25 but
-its priority does not. **Next requested phase is 23.**
+its priority does not. **Next requested phase is 24** (drag/drop
+reordering), then 25 (relative day entry).
 
 **Design/look-and-feel pass (optional, post-V1) is done**, targeting
 [docs/dayward-widget-mockups.png](docs/dayward-widget-mockups.png) — a
