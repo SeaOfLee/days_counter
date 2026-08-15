@@ -21,10 +21,10 @@ class LocalEventRepository implements EventRepository {
     return File('${dir.path}/events.json');
   }
 
-  Future<File> _featuredEventIdFile() async {
-    final dir = await _directoryProvider();
-    return File('${dir.path}/featured_event_id.txt');
-  }
+  // Phase 18's featured_event_id.txt is no longer read or written — each
+  // widget instance now picks its own event. Existing installs keep the
+  // orphaned file; deleting it would mean inventing a one-shot migration
+  // to reclaim a few dozen bytes.
 
   Future<List<DateEvent>> _load() async {
     final cached = _cache;
@@ -78,17 +78,4 @@ class LocalEventRepository implements EventRepository {
     await _persist(events);
   }
 
-  @override
-  Future<String?> getFeaturedEventId() async {
-    final file = await _featuredEventIdFile();
-    if (!await file.exists()) return null;
-    final id = await file.readAsString();
-    return id.isEmpty ? null : id;
-  }
-
-  @override
-  Future<void> setFeaturedEventId(String? id) async {
-    final file = await _featuredEventIdFile();
-    await file.writeAsString(id ?? '');
-  }
 }

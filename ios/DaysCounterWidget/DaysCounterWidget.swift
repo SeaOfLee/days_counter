@@ -8,10 +8,8 @@
 import WidgetKit
 import SwiftUI
 
-// Keep these in sync with the matching constants in AppDelegate.swift —
-// the two targets compile separately and can't share this definition.
-private let widgetAppGroupIdentifier = "group.net.leerichardson.dayscounter"
-private let widgetFeaturedEventKey = "featuredEventPayload"
+// The App Group constants, the shared event list, and the date math all
+// live in WidgetEventStore.swift — the entity query needs them too.
 
 // Palette mirrors lib/theme/app_colors.dart 1:1 — Flutter owns the main
 // app, this widget owns only its own view layer, so there's no shared
@@ -27,83 +25,20 @@ private let darkTextPrimary = Color(red: 0.945, green: 0.929, blue: 0.980) // #F
 private let darkTextMuted = Color(red: 0.553, green: 0.525, blue: 0.639) // #8D86A3
 private let darkDivider = Color(red: 0.173, green: 0.153, blue: 0.235) // #2C2740
 
-private struct FeaturedEvent: Decodable {
-    let id: String
-    let title: String
-    let date: String
-    let direction: String
-    let emoji: String?
-}
-
-private let utcCalendar: Calendar = {
-    var calendar = Calendar(identifier: .gregorian)
-    calendar.timeZone = TimeZone(identifier: "UTC")!
-    return calendar
-}()
-
-private let eventDateFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.calendar = utcCalendar
-    formatter.timeZone = utcCalendar.timeZone
-    formatter.dateFormat = "yyyy-MM-dd"
-    return formatter
-}()
-
-// Mirrors lib/utils/date_calculations.dart's formatDate, e.g. "June 19, 2023".
-private let displayDateFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.calendar = utcCalendar
-    formatter.timeZone = utcCalendar.timeZone
-    formatter.dateFormat = "MMMM d, yyyy"
-    return formatter
-}()
-
-/// Mirrors lib/utils/date_calculations.dart: normalize to UTC midnight (not
-/// local midnight) so day counts don't skew across a DST transition.
-private func dateOnlyUTC(fromLocal date: Date) -> Date {
-    let localComponents = Calendar.current.dateComponents([.year, .month, .day], from: date)
-    return utcCalendar.date(from: localComponents)!
-}
-
-private func calendarDayDifference(from start: Date, to end: Date) -> Int {
-    utcCalendar.dateComponents([.day], from: start, to: end).day ?? 0
-}
-
-private func dayCount(for event: FeaturedEvent, on localDate: Date) -> Int? {
-    guard let eventDate = eventDateFormatter.date(from: event.date) else { return nil }
-    let today = dateOnlyUTC(fromLocal: localDate)
-    switch event.direction {
-    case "until":
-        return calendarDayDifference(from: today, to: eventDate)
-    default:
-        return calendarDayDifference(from: eventDate, to: today)
-    }
-}
-
-private func dateLine(for event: FeaturedEvent) -> String? {
-    guard let eventDate = eventDateFormatter.date(from: event.date) else { return nil }
-    let formatted = displayDateFormatter.string(from: eventDate)
-    return event.direction == "until" ? "Until \(formatted)" : "Since \(formatted)"
-}
-
-private func loadFeaturedEvent() -> FeaturedEvent? {
-    guard
-        let defaults = UserDefaults(suiteName: widgetAppGroupIdentifier),
-        let payload = defaults.string(forKey: widgetFeaturedEventKey),
-        let data = payload.data(using: .utf8)
-    else {
-        return nil
-    }
-    return try? JSONDecoder().decode(FeaturedEvent.self, from: data)
-}
-
 struct Provider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
         SimpleEntry(date: Date(), title: "🎉 Birthday", dayCount: 42, dateLine: "Until June 19")
     }
 
     func snapshot(for configuration: SelectEventIntent, in context: Context) async -> SimpleEntry {
-        currentEntry(for: Date())
+        // Browsing the widget gallery hands us an empty configuration. Showing
+        // the "choose an event" prompt there would undersell the widget, so
+        // preview real data when we have some.
+        if context.isPreview, configuration.event == nil {
+            guard let first = loadEvents().first else { return placeholder(in: context) }
+            return entry(for: Date(), event: first)
+        }
+        return currentEntry(for: Date(), configuration: configuration)
     }
 
     func timeline(for configuration: SelectEventIntent, in context: Context) async -> Timeline<SimpleEntry> {
@@ -114,7 +49,7 @@ struct Provider: AppIntentTimelineProvider {
             guard let entryDate = calendar.date(byAdding: .day, value: dayOffset, to: startOfToday) else {
                 return nil
             }
-            return currentEntry(for: entryDate)
+            return currentEntry(for: entryDate, configuration: configuration)
         }
 
         // Values only change once a day, so request a fresh timeline once
@@ -122,12 +57,45 @@ struct Provider: AppIntentTimelineProvider {
         return Timeline(entries: entries, policy: .atEnd)
     }
 
-    private func currentEntry(for date: Date) -> SimpleEntry {
-        guard let event = loadFeaturedEvent(), let count = dayCount(for: event, on: date) else {
+    /// Three states, and the order of these checks matters: an empty event
+    /// list means "add an event" even when no event is configured, since
+    /// telling someone to choose from nothing is useless.
+    private func currentEntry(for date: Date, configuration: SelectEventIntent) -> SimpleEntry {
+        let events = loadEvents()
+        if events.isEmpty {
             return SimpleEntry(date: date, title: "Add an event", dayCount: nil, dateLine: nil)
         }
-        let title = [event.emoji, event.title].compactMap { $0 }.joined(separator: " ")
-        return SimpleEntry(date: date, title: title, dayCount: count, dateLine: dateLine(for: event))
+        guard
+            let id = configuration.event?.id,
+            let event = events.first(where: { $0.id == id })
+        else {
+            return SimpleEntry(date: date, title: "Choose an event", dayCount: nil, dateLine: nil)
+        }
+        return entry(for: date, event: event)
+    }
+
+    /// Offers one preconfigured tile per event in the widget gallery, so the
+    /// user can add an already-configured widget instead of adding a blank
+    /// one and then editing it.
+    func recommendations() -> [AppIntentRecommendation<SelectEventIntent>] {
+        loadEvents().map { event in
+            AppIntentRecommendation(
+                intent: SelectEventIntent(event: EventEntity(event)),
+                description: Text(event.displayTitle)
+            )
+        }
+    }
+
+    private func entry(for date: Date, event: WidgetEvent) -> SimpleEntry {
+        guard let count = dayCount(for: event, on: date) else {
+            return SimpleEntry(date: date, title: "Choose an event", dayCount: nil, dateLine: nil)
+        }
+        return SimpleEntry(
+            date: date,
+            title: event.displayTitle,
+            dayCount: count,
+            dateLine: dateLine(for: event)
+        )
     }
 }
 
@@ -156,12 +124,19 @@ struct DaysCounterWidgetEntryView: View {
         }
     }
 
+    /// With no count the title is the widget's only content, so it gets the
+    /// primary color and room to wrap — muted single-line is for a label
+    /// sitting above a big number.
+    private var titleColor: Color { entry.dayCount == nil ? textPrimary : textMuted }
+    private var titleLineLimit: Int { entry.dayCount == nil ? 3 : 1 }
+
     private var smallBody: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(entry.title)
                 .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                .foregroundStyle(textMuted)
-                .lineLimit(1)
+                .foregroundStyle(titleColor)
+                .lineLimit(titleLineLimit)
+                .minimumScaleFactor(0.9)
 
             if let dayCount = entry.dayCount {
                 Text(dayCount.formatted())
@@ -180,8 +155,9 @@ struct DaysCounterWidgetEntryView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(entry.title)
                     .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                    .foregroundStyle(textMuted)
-                    .lineLimit(1)
+                    .foregroundStyle(titleColor)
+                    .lineLimit(titleLineLimit)
+                    .minimumScaleFactor(0.9)
 
                 if let dayCount = entry.dayCount {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -247,11 +223,15 @@ struct DaysCounterWidget: Widget {
     }
 }
 
+// All three entry states, so the empty-state layouts get checked without
+// booting a simulator.
 #Preview(as: .systemSmall) {
     DaysCounterWidget()
 } timeline: {
     SimpleEntry(date: .now, title: "🎉 Birthday", dayCount: 42, dateLine: "Until June 19")
     SimpleEntry(date: .now.addingTimeInterval(86400), title: "🎉 Birthday", dayCount: 41, dateLine: "Until June 19")
+    SimpleEntry(date: .now, title: "Choose an event", dayCount: nil, dateLine: nil)
+    SimpleEntry(date: .now, title: "Add an event", dayCount: nil, dateLine: nil)
 }
 
 #Preview(as: .systemMedium) {
@@ -259,4 +239,6 @@ struct DaysCounterWidget: Widget {
 } timeline: {
     SimpleEntry(date: .now, title: "🎉 Birthday", dayCount: 42, dateLine: "Until June 19")
     SimpleEntry(date: .now.addingTimeInterval(86400), title: "🎉 Birthday", dayCount: 41, dateLine: "Until June 19")
+    SimpleEntry(date: .now, title: "Choose an event", dayCount: nil, dateLine: nil)
+    SimpleEntry(date: .now, title: "Add an event", dayCount: nil, dateLine: nil)
 }

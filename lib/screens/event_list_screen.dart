@@ -6,7 +6,6 @@ import '../providers/events_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/event_card.dart';
 import 'event_edit_screen.dart';
-import 'featured_event_screen.dart';
 
 class EventListScreen extends ConsumerWidget {
   const EventListScreen({super.key});
@@ -42,19 +41,9 @@ class EventListScreen extends ConsumerWidget {
     final eventsAsync = ref.watch(eventsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dayward'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.widgets_outlined),
-            tooltip: 'Featured Widget Event',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const FeaturedEventScreen()),
-            ),
-          ),
-        ],
-      ),
+      // No widget-picker action here any more: each Home Screen widget
+      // chooses its own event via long press -> Edit Widget.
+      appBar: AppBar(title: const Text('Dayward')),
       body: eventsAsync.when(
         data: (events) => events.isEmpty
             ? const _EmptyState()

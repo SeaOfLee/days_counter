@@ -6,7 +6,11 @@ import WidgetKit
 // the two targets compile separately and can't share this definition.
 private let widgetBridgeChannelName = "net.leerichardson.dayscounter/widget"
 private let widgetAppGroupIdentifier = "group.net.leerichardson.dayscounter"
-private let widgetFeaturedEventKey = "featuredEventPayload"
+private let widgetEventsKey = "eventsPayload"
+// Retired in Phase 21 when the widget moved from one featured event to
+// per-instance configuration. Cleared on write so upgraded installs don't
+// keep a dead single-event blob around. Safe to delete after a release.
+private let retiredFeaturedEventKey = "featuredEventPayload"
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -26,12 +30,11 @@ private let widgetFeaturedEventKey = "featuredEventPayload"
     )
     channel.setMethodCallHandler { call, result in
       switch call.method {
-      case "updateFeaturedEvent":
+      case "updateEvents":
         let defaults = UserDefaults(suiteName: widgetAppGroupIdentifier)
         if let payload = call.arguments as? String {
-          defaults?.set(payload, forKey: widgetFeaturedEventKey)
-        } else {
-          defaults?.removeObject(forKey: widgetFeaturedEventKey)
+          defaults?.set(payload, forKey: widgetEventsKey)
+          defaults?.removeObject(forKey: retiredFeaturedEventKey)
         }
         if #available(iOS 14.0, *) {
           WidgetCenter.shared.reloadAllTimelines()

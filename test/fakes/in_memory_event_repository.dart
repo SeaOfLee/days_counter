@@ -5,15 +5,12 @@ import 'package:days_counter/repositories/event_repository.dart';
 /// tests so they don't depend on real file I/O (which the FakeAsync zone
 /// `testWidgets` runs in cannot resolve).
 class InMemoryEventRepository implements EventRepository {
-  // this._featuredEventId would make the named parameter private too,
-  // breaking external callers, so this can't use an initializing formal.
-  InMemoryEventRepository({List<DateEvent>? seed, String? featuredEventId})
-    : _events = seed ?? _defaultSeed(),
-      // ignore: prefer_initializing_formals
-      _featuredEventId = featuredEventId;
+  // Copies the seed into a growable list: callers may pass a const literal,
+  // and saveEvent/deleteEvent mutate this in place.
+  InMemoryEventRepository({List<DateEvent>? seed})
+    : _events = [...(seed ?? _defaultSeed())];
 
   final List<DateEvent> _events;
-  String? _featuredEventId;
 
   static List<DateEvent> _defaultSeed() => [
     DateEvent(
@@ -62,13 +59,5 @@ class InMemoryEventRepository implements EventRepository {
   @override
   Future<void> deleteEvent(String id) async {
     _events.removeWhere((e) => e.id == id);
-  }
-
-  @override
-  Future<String?> getFeaturedEventId() async => _featuredEventId;
-
-  @override
-  Future<void> setFeaturedEventId(String? id) async {
-    _featuredEventId = id;
   }
 }

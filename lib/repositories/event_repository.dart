@@ -6,8 +6,4 @@ abstract class EventRepository {
   Future<void> saveEvent(DateEvent event);
 
   Future<void> deleteEvent(String id);
-
-  Future<String?> getFeaturedEventId();
-
-  Future<void> setFeaturedEventId(String? id);
 }
