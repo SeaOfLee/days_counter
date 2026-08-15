@@ -1001,6 +1001,12 @@ Editing an event in Flutter causes the Home Screen widget to refresh.
 
 # Phase 18 — Add a Featured Widget Event Setting
 
+> **Superseded by Phase 21.** This phase shipped in V1 and is kept as
+> history. Phase 21 replaces it with per-instance widget configuration
+> through App Intents, which makes a single globally featured event
+> redundant — the setting, its storage, and its screen are deleted there.
+> Don't build on this phase's featured-event API.
+
 Before building native widget configuration, support one globally selected widget event inside the Flutter app.
 
 Example setting:
@@ -1210,6 +1216,13 @@ Phase 20 is the exception: pursue it once explicitly requested, ahead
 of Phases 21–22, since it's about shipping what already exists rather
 than an optional additional learning exercise.
 
+Phase 20 is now done (the app shipped at 1.0.1). Phases 21 and 23–25
+have since been **explicitly requested** and are real upcoming work
+rather than hypothetical exercises; work them in order unless told
+otherwise. Phase 22 (Lock Screen Widgets) remains genuinely optional and
+unrequested — its number places it before 23–25 but its priority does
+not.
+
 ## Phase 20 — Prepare for App Store Submission
 
 The app itself needs no new functionality for this phase — App Store
@@ -1284,20 +1297,23 @@ Apple's call, not something to engineer around here.)
 
 ## Phase 21 — Configurable Widgets
 
-Allow multiple widget instances, each configured for a different event.
+Allow multiple widget instances, each configured for a different event,
+using modern WidgetKit configuration through App Intents.
 
-Use modern WidgetKit configuration through App Intents.
+**This phase is also the "swipe through multiple events" feature.**
+WidgetKit has no swipe or pan gesture API — widgets are archived SwiftUI
+views rendered out of process, and only tap targets (`Link`, and on
+iOS 17+ `Button`/`Toggle` bound to an App Intent) reach the widget at
+all. The swiping people picture is the OS-level **widget stack**: drag
+one widget onto another and iOS provides the gesture, exactly as it does
+between Photos and Calendar in a stock stack. All this app has to supply
+is per-instance configuration so that two stacked Dayward widgets show
+two different events instead of the same one. That is this phase.
 
-Conceptually:
-
-```swift
-struct SelectEventIntent:
-    WidgetConfigurationIntent {
-
-    @Parameter(title: "Event")
-    var event: EventEntity?
-}
-```
+It also **retires the featured-event concept from Phase 18**. Once each
+widget instance chooses its own event, a single globally featured event
+is redundant, so the setting and its storage are deleted rather than
+kept as a fallback.
 
 Desired UX:
 
@@ -1314,9 +1330,295 @@ Anniversary
 ...
 ```
 
+### 21a — Build-system spike (do this first)
+
+`ENABLE_APP_INTENTS_METADATA_EXTRACTION = NO` is currently set on every
+build configuration of both Runner and DaysCounterWidgetExtension. That
+was the workaround for the Xcode 26 build cycle between
+`ExtractAppIntentsMetadata` and Flutter's "Thin Binary" script phase (see
+CLAUDE.md). App Intents needs that extraction turned back on, so this
+phase reopens a bug that was previously worked around. The other half of
+the original fix is still in place — Runner's "Embed Foundation
+Extensions" phase runs before "Thin Binary" — so it may now build
+cleanly.
+
+**Flipping the flag alone is a false negative.** With extraction enabled
+but no App Intents symbols in the target, `ExtractAppIntentsMetadata` has
+nothing to do and may never create the task edges that cycle. The spike
+must include a real intent — roughly thirty lines: an `AppEntity` with a
+hardcoded `suggestedEntities()`, a `WidgetConfigurationIntent`, and
+`Provider`/`StaticConfiguration` switched to their App Intent
+equivalents. Do it on a throwaway branch.
+
+The cycle error is emitted by the build planner *before* compilation, so
+it fails in seconds:
+
+```bash
+xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
+  -configuration Debug -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' build
+```
+
+Then confirm with a real `flutter build ios --simulator --debug`, which
+also drives Flutter's script phases. **Test Debug and Release both** —
+this cycle has been configuration-sensitive, and Release is what ships.
+
+Try, cheapest first:
+
+1. Extraction `YES` on **the widget extension's three configs only**,
+   Runner's three left at `NO`. The intent types are referenced only by
+   the extension, and "Thin Binary" is a Runner phase, so this is the
+   variant least likely to reintroduce the cycle.
+2. Move "Embed Foundation Extensions" back *after* "Thin Binary" — the
+   Phase 13 reorder may be the cause now that extraction is on, so the
+   old fix is worth explicitly un-applying as an experiment.
+3. Extraction `YES` on both targets.
+
+Do **not** remove Flutter's `Info.plist` input path from the Thin Binary
+phase to work around this. `flutter_tools`'
+`xcode_thin_binary_build_phase_input_paths_migration.dart` re-adds it on
+every build, guarding a separate Bonjour/mDNS bug.
+
+If none of those work, the options get materially worse and are a
+decision to make with the user rather than silently:
+
+- A legacy `IntentConfiguration` with a SiriKit `.intentdefinition`
+  avoids App Intents metadata entirely, but dynamic options for a widget
+  config INIntent need a **separate Intents extension target** — a third
+  target, entitlement, and bundle id. For a learning project that may be
+  worse than not doing it.
+- Re-scope to a single widget that auto-rotates through events on its
+  timeline. That delivers "multiple events on the Home Screen" without
+  App Intents, but it does **not** satisfy this phase's success
+  criterion, and it gives up the swipe-a-stack interaction entirely. A
+  deliberate scope cut, not a fix.
+
+Evaluate the spike before writing any real intent code.
+
+### 21b — Publish all events to the App Group
+
+The widget currently receives exactly one event: `WidgetBridge` sends a
+single `jsonEncode(event.toJson())` string and `AppDelegate` stores it
+under `featuredEventPayload`. An `EntityQuery` needs the whole list.
+
+- `lib/services/widget_bridge.dart`: replace
+  `updateFeaturedEvent(DateEvent?)` with `updateEvents(List<DateEvent>)`,
+  encoding the full array. Keep the `MissingPluginException` catch — it
+  is what lets the non-iOS test run.
+  **Always send a string, never `null`** — an empty list becomes `"[]"`.
+  This is load-bearing: it lets the widget distinguish "the user has zero
+  events" from "never synced", and it removes the `removeObject` branch
+  from the native handler. Send a bare JSON array, the same shape
+  `events.json` already holds; a version envelope buys nothing until
+  there's a second consumer.
+- `ios/Runner/AppDelegate.swift`: rename the method case to
+  `updateEvents`, write under a new `eventsPayload` key, and clear the
+  stale `featuredEventPayload` key so upgraded installs don't leave a
+  dead single-event blob behind. Keep the
+  `WidgetCenter.shared.reloadAllTimelines()` call.
+- `lib/providers/events_provider.dart`: `_syncFeaturedEventToWidget`
+  becomes `_syncEventsToWidget(events)`, forwarding the list. It must
+  stay **awaited**, for the reason already documented there: the app can
+  be backgrounded moments after an edit, and an un-awaited
+  platform-channel call can be cut off mid-write.
+
+This also removes the two-way provider dependency where `EventsNotifier`
+read `featuredEventIdProvider` while `FeaturedEventIdNotifier` read
+`eventsProvider`.
+
+Array order is the contract — `events.json` is persisted in list order,
+so the payload order is the user's order, and Phase 24's drag reorder
+will flow into the widget's event picker without extra work.
+
+### 21c — Entity, query, intent, provider
+
+`ios/DaysCounterWidget/` is a file-system-synchronized group in the Xcode
+project, with `Info.plist` as its only membership exception. New `.swift`
+files placed in that directory join the widget extension target
+automatically — no Xcode GUI work and no `project.pbxproj` editing.
+Prefer new files over growing the existing one:
+
+- `WidgetEventStore.swift` — rename `FeaturedEvent` to `WidgetEvent`,
+  replace `loadFeaturedEvent()` with `loadEvents() -> [WidgetEvent]`
+  decoding an array from `eventsPayload` and returning `[]` on any
+  failure. The UTC-normalized `dayCount(for:on:)` and `dateLine(for:)`
+  helpers move here unchanged — they mirror
+  `lib/utils/date_calculations.dart` and must keep doing so. Also factor
+  the emoji-plus-title join (currently inline in `currentEntry`) into a
+  `displayTitle` property, since the picker needs it too.
+  **Gotcha:** these helpers are currently `private` at file scope, which
+  in Swift means file-private. Moving them to a new file requires
+  dropping the `private` keyword — both files are in the same module, so
+  the default `internal` is what's wanted.
+- `SelectEventIntent.swift` — entity, query, and intent together; they
+  total about forty lines and splitting them three ways would be
+  over-decomposition. The `AppEntity`'s `id` matches `DateEvent.id`, with
+  a `displayRepresentation` built from `displayTitle` and a
+  `static var defaultQuery`. Use a plain `EntityQuery` implementing
+  `entities(for:)` and `suggestedEntities()` — the picker list is
+  populated by `suggestedEntities()`, so it has to return a non-empty
+  result. Not `EntityStringQuery`, which exists for Siri free-text
+  matching this doesn't need, and not `DynamicOptionsProvider`, which is
+  for plain-typed `@Parameter` option lists rather than entity pickers.
+
+  Two details that matter: the `@Parameter` must be **optional**
+  (`var event: EventEntity?`) — a non-optional parameter changes how iOS
+  treats already-placed widgets, and optionality is what produces the
+  "needs configuration" state for free. And both query methods must read
+  `loadEvents()` fresh on every call rather than caching, so a renamed
+  event shows its new title and a deleted event resolves to nothing.
+- `DaysCounterWidget.swift` — `Provider` moves from `TimelineProvider` to
+  `AppIntentTimelineProvider`. Note the shape change, which is easy to
+  get wrong: `getSnapshot`/`getTimeline` become `snapshot(for:in:)` /
+  `timeline(for:in:)`, they take the configuration, and they are `async`
+  functions **returning** values rather than calling a completion
+  handler. The 7-day entry generation and `.atEnd` reload policy carry
+  over unchanged; only the event lookup changes, from "the one featured
+  event" to "the id carried on the configuration intent".
+
+  Watch `snapshot(for:in:)`: when the user browses the widget gallery
+  the configuration is empty, so a naive implementation previews the
+  "choose an event" prompt — a poor first impression. Branch on
+  `context.isPreview` and show real data if any exists.
+- `StaticConfiguration` becomes
+  `AppIntentConfiguration(kind:intent:provider:)`. **Keep `kind` as
+  `"DaysCounterWidget"`** so already-placed widgets survive the change.
+  `configurationDisplayName`, `description`, and `supportedFamilies` stay
+  as they are.
+
+`AppIntentTimelineProvider` requires iOS 17+; the widget extension's
+deployment target is well above that, so the new code needs no
+availability guards.
+
+### 21d — Three entry states
+
+There are three states to render:
+
+| State | When | Renders |
+|---|---|---|
+| Configured | the intent carries an event id that resolves | today's layout |
+| Needs configuration | the intent's event is nil (a widget placed before this update), or its id no longer resolves because the event was deleted | a prompt to choose an event |
+| No events | the shared list is empty | "Add an event" (today's copy) |
+
+Prompting is a deliberate choice over silently falling back to the first
+event — a widget confidently showing the wrong event is worse than one
+that says what to do.
+
+**Keep `SimpleEntry` as it is** (`date`, `title`, `dayCount`,
+`dateLine`). The existing views already render "title only, no count"
+when `dayCount == nil`, which is exactly what both empty states need, so
+an explicit state enum would add a type for zero behavior change —
+against guiding principle 6. Order the checks so the empty list wins:
+test `events.isEmpty` first, then the configuration lookup.
+
+Two view changes are genuinely required:
+
+- Both layouts set `.lineLimit(1)` on the title at `.subheadline` size,
+  so "Long press to choose an event" would render as `Long press to c…`
+  in `systemSmall`. Shorten the copy — "Choose an event" matches "Add an
+  event" in register and length — **and** relax the limit when there's no
+  count (`entry.dayCount == nil ? 3 : 1`), since the title is then the
+  only content on the tile.
+- Give the no-count title the primary text color rather than the muted
+  one. Muted is meant for a label sitting above a big number; as the sole
+  content it reads like a rendering bug. This applies to today's "Add an
+  event" state too, so it's an inherited polish fix.
+
+Add `#Preview`s for all three states at both families — Xcode Previews
+render without booting a simulator and are the fastest way to check the
+truncation fix.
+
+Optional, and the best UX-per-line in this phase: `AppIntentConfiguration`
+supports `recommendations()`, returning one `AppIntentRecommendation` per
+event so the widget gallery offers a preconfigured tile per event and the
+user picks the right one at add time instead of adding then configuring.
+About eight lines over `loadEvents()`.
+
+### 21e — Delete the featured-event concept
+
+Do this only after 21b–21d work, so there is never a window with no way
+to choose an event.
+
+Delete outright: `lib/providers/featured_event_provider.dart` (including
+`selectFeaturedEvent()`) and `lib/screens/featured_event_screen.dart`.
+
+Edit: `event_repository.dart` and `local_event_repository.dart` (drop
+`get`/`setFeaturedEventId` and the `featured_event_id.txt` handling),
+`events_provider.dart`, `widget_bridge.dart`,
+`event_list_screen.dart` (remove the `Icons.widgets_outlined` app bar
+action — this frees the app bar's only slot, which Phase 24 can reuse),
+and `test/fakes/in_memory_event_repository.dart`.
+
+`featured_event_id.txt` is left orphaned on existing installs. That's
+acceptable; don't write migration code for a file nothing reads any more.
+
+`test/fakes/widget_bridge_mock.dart` keeps the same channel name and must
+still be registered in every widget test's `setUp` — without it
+`pumpAndSettle()` hangs forever on the unmocked channel instead of
+throwing. It currently discards `call.arguments`; extend it to capture
+them so a test can assert the full event array reaches the bridge.
+
+### 21f — Migration notes
+
+Widgets placed by 1.0.1 users carry no intent configuration. With `kind`
+unchanged they should survive the update and land in the "needs
+configuration" state until long-pressed. That is intended behavior, not a
+bug. It is also the single biggest assumption in this phase that no build
+can check — verify it by installing the shipped 1.0.1 build on a device,
+placing a widget, then installing the new build over it. If iOS drops
+them anyway there is no code fix, only a release note.
+
+**The stale-payload window.** After updating, `eventsPayload` does not
+exist until the user launches the app once, because that is when
+`EventsNotifier.build()` runs the sync. If WidgetKit refreshes before
+that first launch, a user with four events briefly sees "Add an event" —
+alarming and wrong. Accepting this is reasonable: the window closes
+permanently on any app launch, and the user has to open the app or
+long-press the widget to configure it regardless. The alternative is to
+have `loadEvents()` fall back to decoding the old `featuredEventPayload`
+as a single-element list, which costs a handful of lines of legacy code
+in the file this phase is trying to clean up, and conflicts with clearing
+that key. Prefer accepting the window; record the choice.
+
+The app is already on the App Store, so this removes a working V1 feature
+from users' hands — worth a release note.
+
+### 21g — What can be verified where
+
+`flutter analyze` catches the whole deletion sweep — dangling imports,
+the test fake no longer satisfying `EventRepository`, any surviving
+reference to the featured API. Run it the moment the deletions land.
+
+`flutter test` covers the payload. Extend `widget_bridge_mock.dart` with
+a recording variant that captures the method and arguments (keep the
+existing no-op for tests that don't care) and assert: `build()` sends
+`updateEvents` with ids in list order — nothing in the suite guards that
+invariant today; a save appends; a delete removes; and an empty
+repository yields `'[]'` rather than `null`, pinning the decision the
+Swift empty-state logic depends on.
+
+More is simulator-verifiable than expected — the runtime matches the
+widget's deployment target, so the build cycle itself, the Edit Widget
+picker and its ordering, placing two widgets configured to two events,
+and delete/rename propagation can all be checked without a device.
+
+Genuinely device-only: **upgrade-in-place from the shipped 1.0.1**, which
+cannot be installed on a simulator, and the stack behavior itself — stack
+creation by dragging one widget onto another, the swipe feel, and Smart
+Rotate. Widget placement needs interactive long-press UI that previous
+sessions could not automate, so budget for a hands-on pass.
+
+Do the work in an order that fails fast: spike, then the Swift skeleton
+against an empty payload, then the Flutter bridge (first end-to-end
+moment), then the deletion sweep, then tests. Deleting last means a
+broken build is unambiguously the deletion's fault rather than the
+feature's.
+
 Success criterion:
 
-Multiple widgets can display different events.
+Two Dayward widgets are placed, configured to different events via Edit
+Widget, and stacked — swiping the stack moves between them, each showing
+its own correct day count.
 
 ## Phase 22 — Lock Screen Widgets
 
@@ -1335,6 +1637,163 @@ Last Drink
 
 A useful additional WidgetKit learning exercise but not required.
 
+## Phase 23 — Dark-Mode Readability on the Event Editor
+
+The New/Edit Event screen is hard to read in dark mode. Nothing in
+`lib/screens/event_edit_screen.dart` sets colors or text styles of its
+own, so every cause lives in `lib/theme/app_theme.dart`:
+
+- `ColorScheme.copyWith` overrides colors without their paired `on*`
+  roles. Both themes override `primary`, `secondary`, `surface`,
+  `onSurface`, and `onSurfaceVariant`, but leave `onPrimary`,
+  `onSecondary`, the container roles, and the error roles at values
+  `ColorScheme.fromSeed` derived for its own generated palette rather
+  than the lavender one. Anything Material draws from those pairs is
+  unaudited.
+- There is no `DatePickerThemeData` at all, so the stock `showDatePicker`
+  dialog renders entirely from those seed-derived roles.
+- `bodyLarge` is never defined. The theme sets only `displayMedium`,
+  `titleLarge`, `titleMedium`, and `bodyMedium`, but `TextField` input
+  text and the `InputDecorator`'s child `Text` both resolve to
+  `bodyLarge` — i.e. a Material default, not the app's palette.
+- Input labels use the muted color on the dark input fill, a low-contrast
+  pairing.
+- Unselected segmented-button segments use the muted foreground on the
+  card color, and the control sits directly on the scaffold background
+  with no border — so the unselected half reads as empty space rather
+  than a button.
+- Error states are unthemed: no `errorBorder`, `focusedErrorBorder`, or
+  `errorStyle`, so validation messages fall back to default error colors
+  against the app's fill.
+- Also absent: `textSelectionTheme` (cursor and selection handles),
+  `iconTheme`, `dividerTheme`.
+
+The work is confined to `app_theme.dart`. Its `_themeFrom` helper already
+takes `foreground`, `muted`, `inputFill`, and `cardColor` parameters, so
+fixes stay parameterized across light and dark rather than being branched
+per theme. Complete the `ColorScheme` overrides, add
+`DatePickerThemeData`, define `bodyLarge`, raise label contrast, theme
+the error states, give `SegmentedButton` a visible boundary, and add
+`textSelectionTheme`.
+
+Resist adding per-screen color overrides in the editor — keeping the fix
+in the theme means the list and any future screens inherit it too.
+
+Success criterion:
+
+Every control on the New/Edit Event screen — labels, input text, both
+segmented-button halves, the date picker dialog, and validation errors —
+is legible in dark mode, with text meeting 4.5:1 contrast.
+
+Verify:
+
+```bash
+flutter test
+flutter analyze
+```
+
+Plus a manual dark-mode pass through create → validate empty → pick date
+→ save.
+
+## Phase 24 — Drag and Drop Reordering
+
+Let the user drag event cards into whatever order they want.
+
+Ordering is already nothing more than array position in `events.json` —
+the repository rewrites the whole array on every change and nothing
+anywhere sorts. **So this needs no `sortOrder` field**, and guiding
+principle 2 (keep the domain model small) holds.
+
+What it does need:
+
+- A bulk-order method on `EventRepository`, e.g.
+  `reorderEvents(List<String> orderedIds)`. This is unavoidable:
+  `getEvents()` returns an unmodifiable list and `saveEvent` only appends
+  or replaces in place, so there is currently no way to express a new
+  order at all.
+- The same method on `LocalEventRepository` (reorder the cached list,
+  then persist) and on the in-memory test fake. Note the fake holds its
+  seed list directly, so a test passing a `const` seed would yield an
+  immutable list — have it copy into a growable one.
+- A `reorderEvents` method on `EventsNotifier`, following the pattern the
+  other mutations already use: write to the repository, re-read events,
+  replace state.
+- `ListView.builder` becomes `ReorderableListView.builder` in
+  `event_list_screen.dart`. Items carry no keys today; `EventCard`
+  already accepts `super.key`, so callers pass `ValueKey(event.id)`. The
+  per-item bottom padding has to move inside the keyed child.
+- A decision on the drag affordance: long-press (the mobile default)
+  versus an explicit reorder mode toggled from the app bar. Phase 21
+  frees the app bar's only action slot by removing the featured-event
+  button, so a toggle has somewhere to live.
+
+Card tints are safe — `EventCard` keys its background color off
+`event.id.hashCode`, not the list index, so reordering won't shuffle
+colors.
+
+One ordering caveat: `selectFeaturedEvent()` currently falls back to the
+first event, which means reordering would silently change what the widget
+displays for anyone who never picked a featured event. Phase 21 deletes
+that fallback and removes the hazard. If this phase is done *before*
+Phase 21, reordering must also trigger the widget sync.
+
+Success criterion:
+
+Events can be dragged into a new order, and that order survives an app
+restart.
+
+Verify:
+
+```bash
+flutter test
+```
+
+With a new repository test asserting order persists across a fresh
+repository instance over the same directory — the existing suite has no
+ordering test — plus a widget test driving a drag.
+
+## Phase 25 — Relative Day Entry
+
+Let the user enter a date as "N days from today" instead of picking one
+off a calendar, e.g. counting down to a 100-day mark.
+
+This is an **input convenience only**. The app computes the resulting
+date and stores it exactly as it stores any other date. `DateEvent` gains
+no field, serialization is unchanged, the App Group payload is unchanged,
+and no Swift code is touched — guiding principle 2 again.
+
+Work:
+
+- Add a helper to `lib/utils/date_calculations.dart` for "the date N days
+  from a reference date", with an injectable `now` matching the existing
+  `daysSince`/`daysUntil` signatures. Build it as
+  `DateTime(now.year, now.month, now.day + n)` rather than adding a
+  `Duration` — Dart normalizes the overflowing day field correctly,
+  whereas `Duration(days: n)` reintroduces exactly the DST skew this file
+  exists to avoid.
+- In `event_edit_screen.dart`, add a mode switch above the date field. In
+  offset mode, show a numeric field and a live preview of the computed
+  date using the existing `formatDate`. `_save` already just reads
+  `_date`, so it needs no restructuring — offset mode simply sets it.
+- Make the interaction with direction explicit in the UI: with `until`
+  the offset means N days ahead, with `since` it means N days back.
+
+Success criterion:
+
+Entering "100 days" with direction Until creates an event dated 100 days
+from today, whose card immediately reads 100 days.
+
+Verify:
+
+```bash
+flutter test
+```
+
+Unit tests for the new helper covering a DST boundary and month/year
+rollover, matching the existing style in
+`test/date_calculations_test.dart`, plus a widget test creating an event
+through offset mode.
+
 ---
 
 # Post-V1 Learning Ideas
@@ -1346,7 +1805,6 @@ Possible future exercises:
 - Android version
 - Android Home Screen widget
 - Import/export JSON
-- Event ordering
 - Search
 - Custom colors/icons
 - Relative years/months/days display
@@ -1361,11 +1819,17 @@ Do these only after V1 works.
 
 Possible future product features (distinct from the learning exercises
 above — these would need their own design/phase treatment before
-becoming plan work):
+becoming plan work).
 
-- Swipable widgets — a single widget instance displays multiple dates,
-  swiping moves through them
-- Multiple featured dates
+Both entries that used to sit here have been promoted into Phase 21.
+"Swipable widgets" turned out not to need in-widget gestures at all —
+WidgetKit has none — because iOS widget stacks already provide the swipe
+once each widget instance can be configured separately. "Multiple
+featured dates" is superseded by the same work: per-instance
+configuration makes a curated featured list unnecessary, so the featured
+concept is removed rather than expanded.
+
+Nothing is currently listed here.
 
 ---
 

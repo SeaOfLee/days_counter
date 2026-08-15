@@ -140,8 +140,10 @@ optional and only pursued if explicitly requested, with one exception:
 phase**, requested by the user right after V1 landed, to be worked on
 before any subsequent design/look-and-feel pass (which the user plans
 to handle themselves). Phases 21–22 (Configurable Widgets, Lock Screen
-Widgets) and the remaining "Post-V1 Learning Ideas" list are still
-fully optional — don't treat their numbers as an implicit next step.
+Widgets) and the remaining "Post-V1 Learning Ideas" list were still
+fully optional at that point — see the newer note below, which
+supersedes this: Phase 21 has since been requested, rewritten, and
+joined by Phases 23–25.
 
 Phase 20 is underway: the placeholder bundle identifier
 (`com.example.daysCounter`) has been renamed throughout to
@@ -268,11 +270,45 @@ iPhone (iOS 26.6), and the exported IPA is signed *Apple
 Distribution* with app and widget extension both at `1.0.1 (3)`.
 
 With V1 (Phases 0–19) and Phase 20 both done, a design/look-and-feel
-pass (optional, post-V1) has also happened — see below. Everything
-else remaining is optional: Phases 21–22 (Configurable Widgets, Lock
-Screen Widgets) and the "Post-V1 Learning Ideas" list. Don't treat
-either as an implicit next step. Expect to be asked to work through
-the phases in @docs/PROJECT_PLAN.md roughly in order.
+pass (optional, post-V1) has also happened — see below. Expect to be
+asked to work through the phases in @docs/PROJECT_PLAN.md roughly in
+order.
+
+**Five feature requests have since been folded into the plan** (planned
+2026-08-15, none implemented yet):
+
+- **Phase 21 (Configurable Widgets) was rewritten** to absorb two of
+  them: "widget can swipe through multiple events" and "multiple
+  featured events". WidgetKit has no swipe or pan gesture API at all —
+  the swipe people picture is the OS-level widget *stack*, so all this
+  app must supply is per-instance configuration via App Intents, which
+  is what Phase 21 already was. The same work **deletes the
+  featured-event concept from Phase 18** (provider, screen, repository
+  methods, `featured_event_id.txt`, and the app bar action) rather than
+  extending it to a list, since per-instance config makes a single
+  globally featured event redundant. Phase 18 is marked superseded in
+  place. Note this phase reopens the `ENABLE_APP_INTENTS_METADATA_EXTRACTION`
+  build-cycle landmine documented above — the phase opens with a spike
+  to find out, and a flag flip *without* a real intent in the target is
+  a false negative.
+- **Phase 23** — dark-mode readability on the event editor. Every cause
+  is in [lib/theme/app_theme.dart](lib/theme/app_theme.dart), not the
+  screen: `ColorScheme.copyWith` overrides colors without their paired
+  `on*` roles, there's no `DatePickerThemeData`, `bodyLarge` (the actual
+  `TextField` input style) is never defined, and unselected
+  `SegmentedButton` segments are muted-on-card against a nearly
+  identical scaffold.
+- **Phase 24** — drag/drop reordering. Needs **no** `sortOrder` field:
+  order is already just array position in `events.json`. It does need a
+  bulk-order method on `EventRepository`, since `getEvents()` returns an
+  unmodifiable list and `saveEvent` only appends or replaces in place.
+- **Phase 25** — relative day entry ("100 days from today" as an
+  alternative to the date picker). Input convenience only; no model,
+  serialization, or Swift change.
+
+Phase 22 (Lock Screen Widgets) and the "Post-V1 Learning Ideas" list
+remain optional and unrequested — 22's number puts it before 23–25 but
+its priority does not.
 
 **Design/look-and-feel pass (optional, post-V1) is done**, targeting
 [docs/dayward-widget-mockups.png](docs/dayward-widget-mockups.png) — a
