@@ -97,16 +97,16 @@ private func loadFeaturedEvent() -> FeaturedEvent? {
     return try? JSONDecoder().decode(FeaturedEvent.self, from: data)
 }
 
-struct Provider: TimelineProvider {
+struct Provider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
         SimpleEntry(date: Date(), title: "🎉 Birthday", dayCount: 42, dateLine: "Until June 19")
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
-        completion(currentEntry(for: Date()))
+    func snapshot(for configuration: SelectEventIntent, in context: Context) async -> SimpleEntry {
+        currentEntry(for: Date())
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
+    func timeline(for configuration: SelectEventIntent, in context: Context) async -> Timeline<SimpleEntry> {
         let calendar = Calendar.current
         let startOfToday = calendar.startOfDay(for: Date())
 
@@ -119,8 +119,7 @@ struct Provider: TimelineProvider {
 
         // Values only change once a day, so request a fresh timeline once
         // these entries are exhausted rather than polling more often.
-        let timeline = Timeline(entries: entries, policy: .atEnd)
-        completion(timeline)
+        return Timeline(entries: entries, policy: .atEnd)
     }
 
     private func currentEntry(for date: Date) -> SimpleEntry {
@@ -230,7 +229,7 @@ struct DaysCounterWidget: Widget {
     let kind: String = "DaysCounterWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: Provider()) { entry in
+        AppIntentConfiguration(kind: kind, intent: SelectEventIntent.self, provider: Provider()) { entry in
             if #available(iOS 17.0, *) {
                 DaysCounterWidgetEntryView(entry: entry)
                     .containerBackground(for: .widget) {
