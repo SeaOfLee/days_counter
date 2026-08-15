@@ -37,6 +37,14 @@ class EventsNotifier extends AsyncNotifier<List<DateEvent>> {
     await _syncEventsToWidget(events);
   }
 
+  Future<void> reorderEvents(List<String> orderedIds) async {
+    final repository = ref.read(eventRepositoryProvider);
+    await repository.reorderEvents(orderedIds);
+    final events = await repository.getEvents();
+    state = AsyncData(events);
+    await _syncEventsToWidget(events);
+  }
+
   // Awaited deliberately (not fire-and-forget): the app can be backgrounded
   // moments after an edit, and an in-flight platform-channel call can be cut
   // off mid-write if we don't wait for it here.

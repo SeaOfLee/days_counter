@@ -359,19 +359,32 @@ Verified by rendering the editor and the date picker as throwaway
 goldens (deleted afterwards) plus a dark-mode simulator screenshot;
 `flutter test`/`analyze` alone can't confirm a readability fix.
 
-The remaining two requests are **not** implemented:
-- **Phase 24** — drag/drop reordering. Needs **no** `sortOrder` field:
-  order is already just array position in `events.json`. It does need a
-  bulk-order method on `EventRepository`, since `getEvents()` returns an
-  unmodifiable list and `saveEvent` only appends or replaces in place.
+**Phase 24 (drag/drop reordering) is done.** Long press a card to drag
+it; tap still opens the editor, so there's no reorder mode. No
+`sortOrder` field was needed — order is just array position in
+`events.json` — but `EventRepository` gained `reorderEvents(orderedIds)`,
+since `getEvents()` returns an unmodifiable list and `saveEvent` only
+appends or replaces in place. Ids the caller doesn't name keep their
+relative position at the end, so a stale list can reorder but never drop
+events. Two traps: `ReorderableListView.onReorder` is **deprecated** in
+favour of `onReorderItem`, which adjusts `newIndex` itself (using the old
+one requires the off-by-one fixup when dragging down), and the default
+`proxyDecorator` paints an elevated rectangle behind the card's rounded
+corners, so it's overridden with a transparent one. Covered by
+[test/reorder_test.dart](test/reorder_test.dart) — note a drag has to be
+moved in **steps**, not one big `moveBy`, or the list never registers a
+swap.
+
+The remaining request is **not** implemented:
+
 - **Phase 25** — relative day entry ("100 days from today" as an
   alternative to the date picker). Input convenience only; no model,
   serialization, or Swift change.
 
 Phase 22 (Lock Screen Widgets) and the "Post-V1 Learning Ideas" list
 remain optional and unrequested — 22's number puts it before 23–25 but
-its priority does not. **Next requested phase is 24** (drag/drop
-reordering), then 25 (relative day entry).
+its priority does not. **Next requested phase is 25** (relative day
+entry), the last of the five.
 
 **Design/look-and-feel pass (optional, post-V1) is done**, targeting
 [docs/dayward-widget-mockups.png](docs/dayward-widget-mockups.png) — a

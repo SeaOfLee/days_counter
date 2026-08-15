@@ -1750,6 +1750,22 @@ Plus a manual dark-mode pass through create → validate empty → pick date
 
 ## Phase 24 — Drag and Drop Reordering
 
+**Done.** Long press a card to pick it up and drag; tap still opens the
+editor, so no explicit reorder mode or app bar toggle was needed — the
+freed app bar slot from Phase 21 stayed free.
+
+Two details worth knowing. `ReorderableListView`'s `onReorder` is
+**deprecated** in favour of `onReorderItem`, which adjusts `newIndex` for
+the removed item itself — using it means no off-by-one fixup when dragging
+downwards, which is the classic bug here. And the default `proxyDecorator`
+wraps the dragged item in an elevated `Material`, painting a rectangle
+behind the card's rounded corners; a transparent decorator keeps the card
+looking like a card while dragged.
+
+`reorderEvents` takes ids rather than the reordered list, and any id the
+caller doesn't name keeps its relative position at the end — a stale id
+list can reorder but never silently drop events.
+
 Let the user drag event cards into whatever order they want.
 
 Ordering is already nothing more than array position in `events.json` —

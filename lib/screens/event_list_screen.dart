@@ -36,6 +36,19 @@ class EventListScreen extends ConsumerWidget {
     }
   }
 
+  void _reorder(
+    WidgetRef ref,
+    List<DateEvent> events,
+    int oldIndex,
+    int newIndex,
+  ) {
+    // onReorderItem (not the deprecated onReorder) already accounts for the
+    // dragged item being removed, so newIndex needs no off-by-one fixup.
+    final orderedIds = events.map((event) => event.id).toList();
+    orderedIds.insert(newIndex, orderedIds.removeAt(oldIndex));
+    ref.read(eventsProvider.notifier).reorderEvents(orderedIds);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final eventsAsync = ref.watch(eventsProvider);
@@ -47,15 +60,25 @@ class EventListScreen extends ConsumerWidget {
       body: eventsAsync.when(
         data: (events) => events.isEmpty
             ? const _EmptyState()
-            : ListView.builder(
+            // Long press a card to drag it; tap still opens the editor, so
+            // this needs no explicit reorder mode.
+            : ReorderableListView.builder(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
                 ),
                 itemCount: events.length,
+                onReorderItem: (oldIndex, newIndex) =>
+                    _reorder(ref, events, oldIndex, newIndex),
+                // The default decorator wraps the dragged item in an
+                // elevated Material, which paints a rectangle behind the
+                // card's rounded corners.
+                proxyDecorator: (child, index, animation) =>
+                    Material(color: Colors.transparent, child: child),
                 itemBuilder: (context, index) {
                   final event = events[index];
                   return Padding(
+                    key: ValueKey(event.id),
                     padding: const EdgeInsets.only(bottom: 12),
                     child: EventCard(
                       event: event,

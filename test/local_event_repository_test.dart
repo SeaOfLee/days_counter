@@ -108,5 +108,46 @@ void main() {
 
       expect(events.any((e) => e.id == 'persisted-1'), isTrue);
     });
+
+    test('reordering survives a simulated app restart', () async {
+      final firstRun = makeRepository();
+      for (final id in ['a', 'b', 'c']) {
+        await firstRun.saveEvent(
+          DateEvent(
+            id: id,
+            title: 'Event $id',
+            date: DateTime(2026, 1, 1),
+            direction: CountDirection.since,
+          ),
+        );
+      }
+
+      await firstRun.reorderEvents(['c', 'a', 'b']);
+
+      final secondRun = makeRepository();
+      final events = await secondRun.getEvents();
+
+      expect(events.map((e) => e.id).toList(), ['c', 'a', 'b']);
+    });
+
+    test('reordering keeps events the caller did not name', () async {
+      final repository = makeRepository();
+      for (final id in ['a', 'b', 'c']) {
+        await repository.saveEvent(
+          DateEvent(
+            id: id,
+            title: 'Event $id',
+            date: DateTime(2026, 1, 1),
+            direction: CountDirection.since,
+          ),
+        );
+      }
+
+      // A stale id list, e.g. one built before another device added 'c'.
+      await repository.reorderEvents(['b', 'a']);
+
+      final events = await repository.getEvents();
+      expect(events.map((e) => e.id).toList(), ['b', 'a', 'c']);
+    });
   });
 }

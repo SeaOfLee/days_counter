@@ -78,4 +78,23 @@ class LocalEventRepository implements EventRepository {
     await _persist(events);
   }
 
+  @override
+  Future<void> reorderEvents(List<String> orderedIds) async {
+    final events = await _load();
+    final byId = {for (final event in events) event.id: event};
+
+    final reordered = [
+      for (final id in orderedIds) ?byId.remove(id),
+    ];
+    // Anything the caller didn't name keeps its relative position at the
+    // end, so a stale id list can reorder but never silently drop events.
+    reordered.addAll(events.where((event) => byId.containsKey(event.id)));
+
+    // Mutated in place: _cache holds this same list instance.
+    events
+      ..clear()
+      ..addAll(reordered);
+    await _persist(events);
+  }
+
 }

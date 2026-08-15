@@ -60,4 +60,16 @@ class InMemoryEventRepository implements EventRepository {
   Future<void> deleteEvent(String id) async {
     _events.removeWhere((e) => e.id == id);
   }
+
+  @override
+  Future<void> reorderEvents(List<String> orderedIds) async {
+    final byId = {for (final event in _events) event.id: event};
+    final reordered = [
+      for (final id in orderedIds) ?byId.remove(id),
+    ];
+    reordered.addAll(_events.where((event) => byId.containsKey(event.id)));
+    _events
+      ..clear()
+      ..addAll(reordered);
+  }
 }
