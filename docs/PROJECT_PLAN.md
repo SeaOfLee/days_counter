@@ -2039,60 +2039,64 @@ A milestone overrides that for the day. Keep the override inside
 `_cardColor` rather than branching in `build`, so there stays exactly one
 place that decides a card's color.
 
-### 26d — Local notifications
+### 26d — Local notifications — **done, narrowed**
 
-**Recommended: a hand-rolled `MethodChannel`, not
-`flutter_local_notifications`.** Roughly sixty lines of Swift, and the
-`WidgetBridge` → `AppDelegate` pattern to copy is already in the repo.
-Guiding principle 8 (learn the platform boundary rather than hide it)
-argues for it, and principle 7 argues against the package, whose real
-value is Android support and timezone handling that this project doesn't
-need. Note this is a genuine trade — the package handles permission-flow
-and iOS-version edge cases that hand-rolled code has to get right itself.
+Shipped, but deliberately smaller than this section originally specified.
+The rule is one thing: **an event counting down to a future date announces
+itself at 9am on the day it arrives.** Milestone-based notifications — "100
+days today", a day-before heads-up — were cut as more machinery than the
+feature needed to start with. The visual milestone treatment on the widget
+and the card is unaffected and stays.
 
-- **New channel, not a new method on the existing one.**
-  `net.leerichardson.dayscounter/notifications`. The existing channel is
-  named `/widget`; hanging notification scheduling off it makes the name a
-  lie. New file `lib/services/notification_bridge.dart`, mirroring
-  `WidgetBridge`'s shape — including the `MissingPluginException` catch,
-  which is what lets the non-iOS test run.
-- **Every widget test's `setUp` must mock this channel too.** This is the
-  same trap documented for `widget_bridge_mock.dart`: `flutter_test`'s
-  binary messenger *hangs forever* on an unmocked channel rather than
-  throwing, so `pumpAndSettle()` times out with no useful error. Add a
-  `notification_bridge_mock.dart` alongside the existing fake and register
-  both.
-- **Use `UNCalendarNotificationTrigger` with `DateComponents`. Never
-  `UNTimeIntervalNotificationTrigger`** — interval triggers add fixed
-  24-hour blocks and drift across a DST boundary, the exact bug class
-  `date_calculations.dart` exists to prevent. A calendar trigger also
-  follows the user across time zones.
-- **The 64-pending cap is iOS-wide per app** and is the real constraint.
-  Schedule only the next one or two milestones per event plus its day
-  zero; don't enumerate every future milestone.
-- **There is no background execution.** Everything must be scheduled while
-  the app is in the foreground: on `EventsNotifier.build()` and after every
-  mutation, awaited for the same reason `_syncEventsToWidget` is awaited —
-  the app can be backgrounded moments after an edit and cut an in-flight
-  platform-channel call off mid-write. The upside of the 64-cap approach
-  is that a user who saves an event and never opens the app again still
-  gets that event's next milestone.
-- **Use stable identifiers**, e.g. `"<eventId>-<dayCount>"`, and
-  `removePendingNotificationRequests` for an event's ids before
-  rescheduling it. Rescheduling on every mutation means duplicates
-  otherwise.
-- **Permission on first enable, not at launch.**
-  `requestAuthorization(options: [.alert, .sound])`. A permission prompt
-  before the user has asked for anything is the fastest way to a
-  permanent denial.
-- **`FlutterAppDelegate` already declares conformance to
-  `UNUserNotificationCenterDelegate`.** Don't blindly reassign
-  `UNUserNotificationCenter.current().delegate` — check what the superclass
-  is doing first.
-- No `Info.plist` usage-description key is required for local
-  notifications, and no push entitlement.
-- Default fire time: 9:00 local. A notification at midnight is a
-  notification nobody wanted.
+`upcomingMilestoneCounts` and `dateOfMilestone`, written for the larger
+rule, were deleted rather than left unused. They are a `git show` away if
+that rule comes back.
+
+Extensibility lives in the shape rather than in retained code:
+`plannedNotifications` walks the event list and delegates to a per-event
+generator that yields zero or more notifications, so a second rule is an
+addition inside that generator and nothing above it changes. Identifiers
+are `<eventId>-<dayCount>` for the same reason — `-0` today leaves room for
+`-100` later without collision.
+
+What was built, and the constraints that shaped it:
+
+- A hand-rolled `MethodChannel` on
+  `net.leerichardson.dayscounter/notifications`, not
+  `flutter_local_notifications`. Its own channel rather than a method on the
+  widget bridge, which is named `/widget`.
+- **`UNCalendarNotificationTrigger` from `DateComponents`, never
+  `UNTimeIntervalNotificationTrigger`** — an interval adds fixed 24-hour
+  blocks and drifts across a DST boundary. The debug menu's test
+  notification is the one deliberate exception, commented as such.
+- **The 64-pending cap is iOS-wide per app** and iOS silently drops the
+  excess, so the budget is enforced in Dart.
+- **No background execution**: scheduling happens on the same awaited beat
+  as the widget sync, on load and after every mutation.
+- Stable ids plus `removeAllPendingNotificationRequests` before re-adding,
+  so rescheduling replaces rather than stacks.
+- Permission is requested when a user first switches an event on, never at
+  launch. A refusal leaves the switch off.
+- The editor only offers the toggle when the date is still ahead, and
+  `_save` clears the flag if the date has moved into the past.
+  `canNotifyFor` is shared between editor and scheduler so the control and
+  the rule can't disagree.
+
+**A platform-channel trap worth not rediscovering.** The native handler
+originally cast the whole payload with `as? [[String: Any]]`. That cast can
+fail *as a unit* — Flutter's standard codec delivers dictionaries whose keys
+are `AnyHashable`-wrapped — leaving nothing scheduled and raising nothing at
+all. The symptom was maddening: `notify: true` saved correctly, permission
+granted, and zero pending requests. Cast each element separately, and have
+the handler return a count of what it accepted so a decode failure shows up
+as a number disagreeing with what Flutter planned rather than as silence.
+
+**A debug menu exists** for exactly this reason — the notifications are days
+away and fire at 9am, so the path is otherwise unverifiable without moving
+the clock. Behind a bug icon shown only when `kDebugMode` is true, with the
+native handlers inside `#if DEBUG`: fire a test notification ten seconds
+out, re-run the scheduling call, and list what iOS is actually holding.
+Confirmed working on the simulator — planned 2, accepted 2.
 
 ### 26e — Lock screen content is a real privacy decision
 

@@ -435,7 +435,42 @@ relaunching drives the real code path — `EventsNotifier.build()` reads it,
 syncs to the App Group, and reloads timelines — so no tapping through the
 editor is needed to set up test data.
 
-**Local notifications (26d–26f) are not started.** Phase 22 (Lock Screen Widgets) and the
+**Local notifications are done, deliberately narrow.** One rule: an event
+counting down to a future date announces itself at 9am on the day, via a
+hand-rolled `MethodChannel`
+(`net.leerichardson.dayscounter/notifications`) whose handler is in
+[ios/Runner/AppDelegate.swift](ios/Runner/AppDelegate.swift). Milestone-based
+notifications were cut as more than the feature needed; the *visual*
+milestone treatment above is unaffected.
+[lib/services/notification_schedule.dart](lib/services/notification_schedule.dart)
+plans them — one function over the list delegating to a per-event generator,
+so a second rule is an addition there and nothing above changes. Ids are
+`<eventId>-<dayCount>` to leave room for that. Scheduling rides the same
+awaited beat as the widget sync, since there is no background execution, and
+is capped below iOS's 64-pending-per-app limit. Triggers are built from
+`DateComponents`, never `UNTimeIntervalNotificationTrigger`, which drifts
+across DST.
+
+**Trap: never cast a whole platform-channel payload with
+`as? [[String: Any]]`.** That cast can fail *as a unit* — Flutter's codec
+delivers dictionaries with `AnyHashable`-wrapped keys — scheduling nothing
+and raising nothing. It cost real debugging time: `notify: true` saved,
+permission granted, zero pending. Cast each element separately, and have
+native handlers return a count of what they accepted so a decode failure is
+a number that disagrees rather than silence.
+
+**There is a debug menu** ([lib/screens/debug_menu_screen.dart](lib/screens/debug_menu_screen.dart)),
+behind a bug icon in the app bar shown only when `kDebugMode` is true, with
+its native handlers inside `#if DEBUG` so neither half ships. It fires a test
+notification ten seconds out, re-runs the scheduling call reporting planned
+vs accepted, and lists what iOS is actually holding. Notifications are days
+away and fire at 9am, so without it the path is unverifiable short of moving
+the clock.
+
+**Still open: the lock-screen privacy setting** — whether a notification
+reads "Last Drink — 1,000 days" or something generic on a lock screen in
+front of other people. Blocked on deciding where an app-wide setting lives,
+since the parallel-file pattern was deliberately removed in Phase 21. Phase 22 (Lock Screen Widgets) and the
 "Post-V1 Learning Ideas" list remain optional and unrequested — don't
 treat them as an implicit next step.
 
