@@ -2013,12 +2013,15 @@ at the same 150/300/450px greyscale-plus-alpha sizes and framing as
 `Mascot.imageset`. Nothing in Swift references it yet; wiring it to the
 `dayCount == 0` branch is this phase's work.
 
-One sizing note for whoever does that wiring: the confetti spreads wider
-than the character, so inside the same 72pt frame the celebration pose's
-calendar body renders noticeably smaller than the walking pose's. It
-still reads at that size, but if the two look mismatched when placed side
-by side, the fix is a larger frame for the day-zero branch rather than a
-re-crop of the art.
+**Known issue, deferred by choice: the celebration mascot reads too small.**
+Confirmed on device 2026-08-22 — the confetti spreads wider than the
+character, so inside the same 72pt frame the celebration pose's calendar
+body renders noticeably smaller than the walking pose's, and the character
+"feels" smaller and is harder to see. It is a sizing problem, not an art
+problem, so the fix is to give the milestone branch a larger frame (or to
+scale the image up and let the confetti clip) rather than to re-crop or
+redraw the asset. Left as-is deliberately; pick it up when the rest of the
+phase is done.
 
 Add `#Preview`s for day zero and a milestone at both families. Previews
 render without booting a simulator and are the fastest check on the
