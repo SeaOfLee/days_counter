@@ -9,8 +9,8 @@
 //
 // Terminate-and-relaunch is required: LocalEventRepository caches events in
 // memory, so a running app would overwrite whatever this writes. Relaunching
-// also makes EventsNotifier.build() push the featured event through the
-// widget bridge, so the Home Screen widget picks up the demo data too.
+// also makes EventsNotifier.build() push the whole event list through the
+// widget bridge, so the widget's event picker sees the demo data too.
 
 import 'dart:convert';
 import 'dart:io';
@@ -24,25 +24,38 @@ const bundleId = 'net.leerichardson.dayscounter';
 /// pulls in package:flutter, which a plain `dart run` script can't load.
 const cardTintCount = 4;
 
-/// The demo events, in display order. Dates are absolute rather than
-/// relative to today so the "Since June 14, 2015" lines read like real
-/// events; the day counts drift by however long it's been since this list
-/// was last revised, which doesn't matter for a screenshot.
+/// The demo events, in display order.
+///
+/// Most dates are absolute so the "Since June 14, 2015" lines read like real
+/// events; their day counts drift by however long it's been since this list
+/// was revised, which doesn't matter for a screenshot.
+///
+/// Two are pinned relative to today instead, and have to be: a milestone
+/// card only takes the accent treatment on an exact count, so an absolute
+/// date would show it for one day and never again.
 final demoEvents = <_Demo>[
-  _Demo('Anniversary', DateTime(2015, 6, 14), CountDirection.since, '💍'),
-  _Demo('Started Running', DateTime(2026, 1, 1), CountDirection.since, '🏃'),
-  _Demo('New Apartment', DateTime(2026, 3, 20), CountDirection.since, '🌱'),
-  _Demo('Japan Trip', DateTime(2026, 9, 1), CountDirection.until, '✈️'),
-  _Demo('Birthday', DateTime(2026, 10, 4), CountDirection.until, '🎂'),
-  _Demo('Adopted Milo', DateTime(2024, 8, 2), CountDirection.since, '🐶'),
-  _Demo('Quit Coffee', DateTime(2026, 7, 30), CountDirection.since, '☕'),
+  _Demo('Anniversary', CountDirection.since, '💍', date: DateTime(2015, 6, 14)),
+  // Exactly 100 days — renders as a milestone.
+  _Demo('Started Running', CountDirection.since, '🏃', daysAgo: 100),
+  _Demo('New Apartment', CountDirection.since, '🌱', date: DateTime(2026, 3, 20)),
+  // A countdown far enough out to read as an ordinary card, and clear of
+  // Birthday's fixed date so the two don't collide.
+  _Demo('Japan Trip', CountDirection.until, '✈️', daysAhead: 26),
+  _Demo('Birthday', CountDirection.until, '🎂', date: DateTime(2026, 10, 4)),
+  _Demo('Adopted Milo', CountDirection.since, '🐶', date: DateTime(2024, 8, 2)),
+  _Demo('Quit Coffee', CountDirection.since, '☕', date: DateTime(2026, 7, 30)),
 ];
 
-/// Which event the widget shows (index into [demoEvents]).
-const featuredIndex = 0;
-
 class _Demo {
-  _Demo(this.title, this.date, this.direction, this.emoji);
+  _Demo(
+    this.title,
+    this.direction,
+    this.emoji, {
+    DateTime? date,
+    int? daysAgo,
+    int? daysAhead,
+  }) : date = date ??
+            dateOffsetBy(daysAhead ?? -(daysAgo ?? 0));
 
   final String title;
   final DateTime date;
@@ -118,21 +131,17 @@ Future<void> main(List<String> args) async {
   await File('${documents.path}/events.json').writeAsString(
     jsonEncode(events.map((e) => e.toJson()).toList()),
   );
-  await File(
-    '${documents.path}/featured_event_id.txt',
-  ).writeAsString(events[featuredIndex].id);
-
   stdout.writeln('Wrote ${events.length} demo events to ${documents.path}');
   for (var i = 0; i < events.length; i++) {
     final event = events[i];
     final days = event.direction == CountDirection.since
         ? daysSince(event.date)
         : daysUntil(event.date);
-    final featured = i == featuredIndex ? '  (featured)' : '';
+    final milestone = milestoneFor(days) == null ? '' : '  (milestone)';
     stdout.writeln(
       '  ${event.emoji} ${event.title}: ${dayCountLabel(days)}, '
       '${event.direction == CountDirection.since ? 'since' : 'until'} '
-      '${formatDate(event.date)}$featured',
+      '${formatDate(event.date)}$milestone',
     );
   }
   stdout.writeln('\nRelaunch the app to pick these up:');

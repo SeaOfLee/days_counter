@@ -41,7 +41,11 @@ upcoming event, or count up from a meaningful date.
   one (e.g. days to a trip)
 - See your count at a glance from your Home Screen with a widget that
   updates automatically
-- Choose which event your widget features
+- Give each widget its own event, and stack several to swipe between them
+- Enter a date from the calendar, or just say how many days away it is
+- Drag your events into whatever order suits you
+- Get a reminder on the morning a countdown arrives
+- Milestone days look the part — reaching one changes how the event reads
 - Everything stays on your device — no account, no tracking, no ads
 
 ## Keywords
@@ -105,3 +109,30 @@ implemented cryptography.
   recorded here)
 
 No demo account needed; the app has no login/accounts.
+
+## What's New in This Version (1.1.0)
+
+Release notes for the version page in App Store Connect. Written for
+someone who already has 1.0.1 installed.
+
+```text
+Widgets can now be set to different events, so you can stack a few and
+swipe between them.
+
+Reaching a milestone looks like it. A day you've been counting down to
+now reads "Today", and round-number days stand out on the widget and in
+your list.
+
+Turn on a reminder and Dayward will tell you the morning a countdown
+arrives. Reminders are scheduled on your device and say nothing about
+which event they're for.
+
+Also: enter a date as "in 30 days" instead of picking it off a calendar,
+drag events into the order you want, and the New Event screen is much
+easier to read in dark mode.
+```
+
+Note on the reminder wording above: the notification text really is
+generic ("Dayward — Today's the day"), and the release note says so
+deliberately rather than overselling it. It's a lock-screen privacy
+decision, not a limitation to hide.

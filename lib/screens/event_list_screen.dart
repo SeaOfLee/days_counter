@@ -9,6 +9,10 @@ import '../widgets/event_card.dart';
 import 'debug_menu_screen.dart';
 import 'event_edit_screen.dart';
 
+/// Set with `--dart-define=SCREENSHOT_MODE=true` when capturing App Store
+/// screenshots. See README, "Refresh the screenshots".
+const _hideDevAffordances = bool.fromEnvironment('SCREENSHOT_MODE');
+
 class EventListScreen extends ConsumerWidget {
   const EventListScreen({super.key});
 
@@ -62,8 +66,11 @@ class EventListScreen extends ConsumerWidget {
         title: const Text('Dayward'),
         actions: [
           // kDebugMode is a const, so this branch and the screen behind it
-          // are tree-shaken out of release builds.
-          if (kDebugMode)
+          // are tree-shaken out of release builds. The extra flag exists
+          // only for App Store screenshots: those have to be captured from
+          // a debug build, because Flutter won't run release or profile
+          // mode on a simulator, and a bug icon can't ship in a listing.
+          if (kDebugMode && !_hideDevAffordances)
             IconButton(
               icon: const Icon(Icons.bug_report_outlined),
               tooltip: 'Debug',

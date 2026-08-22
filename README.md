@@ -137,8 +137,23 @@ xcrun simctl launch booted net.leerichardson.dayscounter
 
 The script must terminate the app first (it does this itself) because
 `LocalEventRepository` caches events in memory and would overwrite the
-file on its next save. Relaunching also pushes the featured event through
-the widget bridge, so the Home Screen widget picks up the demo data.
+file on its next save. Relaunching also pushes the whole event list
+through the widget bridge, so the widget's event picker sees the demo
+data.
+
+**Build with `--dart-define=SCREENSHOT_MODE=true`.** Screenshots have to
+come from a debug build, because Flutter won't run release or profile
+mode on a simulator, and a debug build shows the developer bug icon in the
+app bar — which can't appear in a store listing. That flag hides it.
+
+**Only one simulator may be booted at a time.** `booted` is ambiguous
+otherwise, and the seed script will silently write into whichever device
+`simctl` picks — including an iPad you left running from the previous
+capture. `xcrun simctl list devices booted` before seeding.
+
+One demo event is pinned to an exact relative offset (100 days) so the
+milestone treatment actually appears in the capture. An absolute date
+would show it for a single day and never again.
 
 Then clean up the status bar and capture:
 
@@ -148,6 +163,19 @@ xcrun simctl status_bar booted override --time "9:41" --dataNetwork wifi \
   --batteryState charged --batteryLevel 100
 xcrun simctl io booted screenshot app_store_assets/screenshots/iphone-6.7-event-list.png
 ```
+
+At least three iPhone screenshots are worth uploading, not the minimum
+one. App Store search results fill an inline preview row from the first
+few portrait screenshots, and with a single screenshot that row tends not
+to render at all — the listing then appears with no images beneath it.
+
+Widget screenshots are allowed and worth including, with two constraints:
+keep other apps' icons and content out of frame, and capture them on a
+**physical device**, because widget configuration doesn't work on the
+simulator (see PROJECT_PLAN.md Phase 21g). A device capture won't match an
+accepted size, so compose it onto a correctly sized canvas rather than
+resizing it — resizing distorts the aspect ratio, which is the rejection
+trap below.
 
 Repeat on `iPad Pro 13-inch (M5)` (2064x2752) for
 `ipad-13-event-list.png`, omitting the cellular flags. Shut down the first
