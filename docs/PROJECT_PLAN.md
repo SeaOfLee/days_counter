@@ -1619,15 +1619,31 @@ invariant today; a save appends; a delete removes; and an empty
 repository yields `'[]'` rather than `null`, pinning the decision the
 Swift empty-state logic depends on.
 
-More is simulator-verifiable than expected — the runtime matches the
-widget's deployment target, so the build cycle itself, the Edit Widget
-picker and its ordering, placing two widgets configured to two events,
-and delete/rename propagation can all be checked without a device.
+**Correction (2026-08-22): widget configuration does not work on the
+simulator.** This section originally claimed the Edit Widget picker,
+placing two configured widgets, and delete/rename propagation were all
+simulator-checkable. They are not, at least on the iOS 26.5 runtime. A
+widget added there lands in "Choose an event" and *stays* there after an
+event is picked: the picker populates, the selection is accepted, and the
+intent never attaches — chronod logs the widget descriptor with a null
+intent reference and never attempts to resolve `SelectEventIntent`.
 
-Genuinely device-only: **upgrade-in-place from the shipped 1.0.1**, which
-cannot be installed on a simulator, and the stack behavior itself — stack
-creation by dragging one widget onto another, the swipe feel, and Smart
-Rotate. Widget placement needs interactive long-press UI that previous
+It is an environment fault, not a code one. `Metadata.appintents/
+extract.actionsdata` in the built extension is complete and correct, and
+Apple's own bundled sample widgets fail identically on the same runtime
+(`LNMetadataProviderErrorDomain Code=9000 "aggregateMetadataIsEmpty"` for
+`com.apple.AdaptiveMusicApp`). The same build configures correctly on a
+physical iPhone. Do not spend time debugging app code when this appears —
+go straight to a device.
+
+The build cycle itself is still simulator-checkable, as is anything that
+doesn't depend on the intent resolving: the app's own UI, the App Group
+payload, and the widget's empty states.
+
+Genuinely device-only, then: **anything involving widget configuration**,
+**upgrade-in-place from the shipped 1.0.1**, which cannot be installed on
+a simulator, and the stack behavior itself — stack creation by dragging
+one widget onto another, the swipe feel, and Smart Rotate. Widget placement needs interactive long-press UI that previous
 sessions could not automate, so budget for a hands-on pass.
 
 Do the work in an order that fails fast: spike, then the Swift skeleton

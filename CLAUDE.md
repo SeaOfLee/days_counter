@@ -414,6 +414,27 @@ reads "Today" instead of a bare `0`, and the widget swaps in
 `MascotCelebration`. `SimpleEntry` needed no new field — `dayCount == nil`
 was already the empty-state sentinel, so `0` is unambiguous.
 
+Verified on a physical iPhone on 2026-08-22.
+
+**Widget configuration cannot be tested on the simulator.** A widget added
+there lands in "Choose an event" and stays there after an event is picked —
+the picker populates and the selection is accepted, but the intent never
+attaches. This is an environment fault: the built extension's
+`Metadata.appintents/extract.actionsdata` is complete and correct, and
+Apple's own bundled sample widgets fail identically on the same iOS 26.5
+runtime (`LNMetadataProviderErrorDomain Code=9000
+"aggregateMetadataIsEmpty"`). The same build configures correctly on a
+device. Don't debug app code when this appears — go to a device. Everything
+that doesn't depend on the intent resolving *is* simulator-checkable: the
+app's own UI, the App Group payload, the widget's empty states, and the
+build itself.
+
+Useful for that: seeding `events.json` directly into the simulator's app
+container (`xcrun simctl get_app_container <sim> <bundle> data`) and
+relaunching drives the real code path — `EventsNotifier.build()` reads it,
+syncs to the App Group, and reloads timelines — so no tapping through the
+editor is needed to set up test data.
+
 **Local notifications (26d–26f) are not started.** Phase 22 (Lock Screen Widgets) and the
 "Post-V1 Learning Ideas" list remain optional and unrequested — don't
 treat them as an implicit next step.
