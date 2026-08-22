@@ -417,6 +417,15 @@ widget, not anywhere in the Flutter app** — another explicit user
 call, made after an initial pass had briefly included it on in-app
 event cards too.
 
+**Any task involving mascot artwork starts at
+[docs/MASCOT_BRIEF.md](docs/MASCOT_BRIEF.md)** — the art direction brief
+(style rules, what the character is, a pose library, and where artwork
+gets used), written to be handed to an illustrator or an image-generation
+agent whole. It also records why the canonical
+`docs/dayward_character_flat_black.svg` cannot be posed by editing its
+paths, and that rebuilding the character from primitives was tried and
+rejected.
+
 Design tokens live in [lib/theme/app_colors.dart](lib/theme/app_colors.dart) (palette constants,
 light + dark) and [lib/theme/app_theme.dart](lib/theme/app_theme.dart) (`ThemeData` built from
 them, including `CardTheme`/`AppBarTheme`/`FloatingActionButtonThemeData`/
@@ -452,8 +461,13 @@ into the widget extension target, and a `@Environment(\.colorScheme)`-
 driven background swap (`.containerBackground` now uses the app's
 palette instead of the generic `.fill.tertiary` system material). The
 mascot lives in `ios/DaysCounterWidget/Assets.xcassets/Mascot.imageset/`
-(raster 1x/2x/3x PNGs generated via ImageMagick from the source
-character art, referenced as `Image("Mascot")`). None of the widget's
+(150/300/450px 1x/2x/3x PNGs, referenced as `Image("Mascot")`). Those
+PNGs are **flat monochrome** — 8-bit greyscale plus alpha, a single
+colour — rasterized from
+[docs/dayward_character_flat_black.svg](docs/dayward_character_flat_black.svg),
+not from the full-colour `~/Downloads/dayward_character.png`. The colour
+original is not used anywhere in the product; it survives only as the
+thing the canonical SVG was traced from. None of the widget's
 `Provider`/`getTimeline`/`dayCount(for:on:)` date-math or App Group
 bridging changed — this pass was view-layer only. The full build
 (Runner + widget extension) compiles cleanly and all 35 Flutter tests
