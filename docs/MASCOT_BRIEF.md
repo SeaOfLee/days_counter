@@ -241,6 +241,37 @@ proposing a change to it, and new artwork drawn to this brief will sit
 alongside it consistently. The colour original is not used anywhere in the
 product.
 
+**Source SVGs may be any aspect; shipped rasters must be square and
+normalized on the character.** These are two different jobs and the
+distinction matters.
+
+A source SVG should have a tight viewBox, as the procedure above says —
+`dayward_celebration_flat.svg` is 922x857, ink to the edges, and that is
+correct. No baked-in dead space, and whoever consumes it decides the
+padding.
+
+The rasterized imageset is where it has to be standardized, because the
+widget draws `Image(...).resizable().scaledToFit().frame(width: N,
+height: N)`. Inside a square frame, `scaledToFit` normalizes on the
+**full ink bounding box** — so any decoration that sprays past the
+character shrinks the character to make room. The celebration pose's
+confetti spreads well beyond it, and at the walking pose's frame size its
+calendar body rendered about a quarter smaller. It read as a shrunken
+character, and it was caught on device rather than in review.
+
+The rule that prevents it: **rasterize every pose onto a square canvas,
+scaled so the calendar body occupies a consistent fraction of the canvas
+height**, letting decorative bleed — confetti, motion lines, thrown limbs
+— run out into the padding. Normalize on the character, never on the
+bounding box. One frame size then serves every pose.
+
+That is not yet how it works. The current fix lives in the view instead:
+`mascotSize` in `DaysCounterWidget.swift` draws the celebration at 96pt
+against the walking pose's 72pt. It is correct but it is a magic number,
+and it has to be rediscovered by eye for each new pose. Normalizing at
+rasterization time retires it — worth doing when a third pose forces the
+issue, not before.
+
 **The canonical SVG is itself a trace, and that is the intended format.** It is
 `potrace` output: six paths, one of which welds 26 subpaths together, with no
 groups, no ids, and a single `fill="#000000"`. That is exactly what the
