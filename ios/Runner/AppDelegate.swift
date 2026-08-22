@@ -71,8 +71,14 @@ private let notificationChannelName = "net.leerichardson.dayscounter/notificatio
         // Flutter always sends the complete set, so replacing wholesale is
         // what keeps a deleted or renamed event from leaving an orphan.
         center.removeAllPendingNotificationRequests()
-        for item in call.arguments as? [[String: Any]] ?? [] {
+        var added = 0
+        // Cast the outer list and each element separately. Flutter's codec
+        // delivers dictionaries whose keys are AnyHashable-wrapped, so the
+        // tempting `as? [[String: Any]]` on the whole payload can fail as a
+        // unit and leave nothing scheduled without raising anything.
+        for raw in (call.arguments as? [Any]) ?? [] {
           guard
+            let item = raw as? [AnyHashable: Any],
             let id = item["id"] as? String,
             let title = item["title"] as? String,
             let body = item["body"] as? String
@@ -100,8 +106,12 @@ private let notificationChannelName = "net.leerichardson.dayscounter/notificatio
               trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
             )
           )
+          added += 1
         }
-        result(nil)
+        // Returns what was actually accepted rather than nothing, so a
+        // payload that fails to decode shows up as a number that disagrees
+        // with what Flutter planned instead of failing silently.
+        result(added)
 
 #if DEBUG
       // Debug-only helpers. Milestones are days away and fire at 9am, so

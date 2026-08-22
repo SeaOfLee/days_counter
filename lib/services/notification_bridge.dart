@@ -62,14 +62,18 @@ class NotificationBridge {
   /// Replace rather than merge: the native side cancels the app's existing
   /// requests before adding these, so the caller never has to work out what
   /// changed, and a deleted or edited event can't leave an orphan behind.
-  static Future<void> schedule(List<PendingNotification> notifications) async {
+  /// Returns how many iOS actually accepted, which will not match the
+  /// number passed in if the payload fails to decode natively.
+  static Future<int> schedule(List<PendingNotification> notifications) async {
     try {
-      await _channel.invokeMethod(
-        'schedule',
-        notifications.map((n) => n.toJson()).toList(),
-      );
+      return await _channel.invokeMethod<int>(
+            'schedule',
+            notifications.map((n) => n.toJson()).toList(),
+          ) ??
+          0;
     } on MissingPluginException {
       // As above — notifications are iOS-only, so there's nothing to do.
+      return 0;
     }
   }
 }

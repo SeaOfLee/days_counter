@@ -57,6 +57,6 @@ class EventsNotifier extends AsyncNotifier<List<DateEvent>> {
   // gets until they open it again.
   Future<void> _sync(List<DateEvent> events) async {
     await WidgetBridge.updateEvents(events);
-    await NotificationBridge.schedule(milestoneNotifications(events));
+    await NotificationBridge.schedule(plannedNotifications(events));
   }
 }

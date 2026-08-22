@@ -54,10 +54,12 @@ class _DebugMenuScreenState extends ConsumerState<DebugMenuScreen> {
 
   Future<void> _reschedule() async {
     final events = ref.read(eventsProvider).valueOrNull ?? const [];
-    final planned = milestoneNotifications(events);
-    await NotificationBridge.schedule(planned);
+    final planned = plannedNotifications(events);
+    final accepted = await NotificationBridge.schedule(planned);
     if (!mounted) return;
-    _say('Scheduled ${planned.length} from ${events.length} events.');
+    // Showing both numbers is the point: a mismatch means the payload
+    // didn't survive the platform channel.
+    _say('Planned ${planned.length}, iOS accepted $accepted.');
     await _refreshPending();
   }
 

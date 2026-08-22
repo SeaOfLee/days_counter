@@ -4,8 +4,8 @@ import '../utils/date_calculations.dart';
 /// One local notification waiting to be handed to iOS.
 ///
 /// Deliberately dumb: the native side schedules exactly what it is given
-/// and decides nothing. Flutter owns the domain, including what counts as a
-/// milestone and how it reads.
+/// and decides nothing. Flutter owns the domain, including which days are
+/// worth a notification and how they read.
 class PendingNotification {
   const PendingNotification({
     required this.id,
@@ -14,8 +14,10 @@ class PendingNotification {
     required this.fireDate,
   });
 
-  /// Stable across reschedules — `<eventId>-<dayCount>` — so rescheduling
-  /// replaces a request rather than stacking duplicates on top of it.
+  /// `<eventId>-<dayCount>`, stable across reschedules so rescheduling
+  /// replaces a request rather than stacking duplicates on top of it. The
+  /// day count is in the identifier rather than a bare "0" so a second rule
+  /// can add `-100` or `-365` later without colliding.
   final String id;
   final String title;
   final String body;
@@ -50,10 +52,10 @@ const maxPendingNotifications = 60;
 
 /// Every notification worth scheduling right now, soonest first.
 ///
-/// Recomputed from scratch on every call rather than diffed: the native side
-/// clears and re-adds, and a few dozen requests is nothing. Events that
-/// haven't opted in are skipped entirely.
-List<PendingNotification> milestoneNotifications(
+/// Recomputed from scratch on every call rather than diffed: the native
+/// side clears and re-adds, and a few dozen requests is nothing. Events
+/// that haven't opted in are skipped entirely.
+List<PendingNotification> plannedNotifications(
   List<DateEvent> events, {
   DateTime? now,
 }) {
@@ -62,46 +64,56 @@ List<PendingNotification> milestoneNotifications(
 
   for (final event in events) {
     if (!event.notify) continue;
-
-    final countingDown = event.direction == CountDirection.until;
-    final currentDays = countingDown
-        ? daysUntil(event.date, now: currentTime)
-        : daysSince(event.date, now: currentTime);
-
-    for (final days in upcomingMilestoneCounts(
-      currentDays,
-      countingDown: countingDown,
-    )) {
-      final date = dateOfMilestone(event.date, days, countingDown: countingDown);
-      final fireDate = DateTime(date.year, date.month, date.day, notificationHour);
-
-      // A milestone earlier today has already gone by; iOS would fire a
-      // calendar trigger in the past immediately, which reads as a bug.
-      if (!fireDate.isAfter(currentTime)) continue;
-
-      pending.add(
-        PendingNotification(
-          id: '${event.id}-$days',
-          title: _title(event),
-          body: _body(days, countingDown: countingDown),
-          fireDate: fireDate,
-        ),
-      );
-    }
+    pending.addAll(_notificationsFor(event, currentTime));
   }
 
   pending.sort((a, b) => a.fireDate.compareTo(b.fireDate));
   return pending.take(maxPendingNotifications).toList();
 }
 
-/// Matches how the event cards read, e.g. "🍺 Last Drink".
+/// The rules for one event.
+///
+/// There is exactly one today: a countdown tells you on the day it arrives.
+/// It is written as a function yielding a list rather than returning a
+/// single value so that adding a rule — round-number milestones, a
+/// day-before heads-up — is an addition here rather than a restructure of
+/// everything above.
+Iterable<PendingNotification> _notificationsFor(
+  DateEvent event,
+  DateTime now,
+) sync* {
+  // Only a countdown has a day to look forward to. An event counting up
+  // from the past has no future arrival, which is why the editor doesn't
+  // offer the toggle for one.
+  if (event.direction != CountDirection.until) return;
+
+  final fireDate = DateTime(
+    event.date.year,
+    event.date.month,
+    event.date.day,
+    notificationHour,
+  );
+
+  // 9am on the day may already have gone by; iOS fires a calendar trigger
+  // set in the past immediately, which reads as a bug.
+  if (!fireDate.isAfter(now)) return;
+
+  yield PendingNotification(
+    id: '${event.id}-0',
+    title: _title(event),
+    body: "Today's the day.",
+    fireDate: fireDate,
+  );
+}
+
+/// Matches how the event cards read, e.g. "🏖 Vacation".
 String _title(DateEvent event) {
   return [event.emoji, event.title].whereType<String>().join(' ');
 }
 
-String _body(int days, {required bool countingDown}) {
-  if (days == 0) return "Today's the day.";
-  return countingDown
-      ? '${dayCountLabel(days)} to go.'
-      : '${dayCountLabel(days)} today.';
+/// Whether [date] can carry a reminder at all — that is, whether its
+/// arrival is still ahead. Shared with the editor so the toggle and the
+/// scheduler agree on what is eligible.
+bool canNotifyFor(DateTime date, {DateTime? now}) {
+  return daysUntil(date, now: now) > 0;
 }

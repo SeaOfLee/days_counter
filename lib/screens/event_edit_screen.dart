@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/date_event.dart';
 import '../services/notification_bridge.dart';
+import '../services/notification_schedule.dart';
 import '../utils/date_calculations.dart';
 
 /// Returned by [EventEditScreen] when the user deletes the event being
@@ -114,7 +115,10 @@ class _EventEditScreenState extends State<EventEditScreen> {
       date: _date!,
       direction: _inferDirection(_date!),
       emoji: emoji.isEmpty ? null : emoji,
-      notify: _notify,
+      // Clear the flag if the date moved into the past while the switch was
+      // on: the toggle is hidden by then, so leaving it set would be a
+      // preference the user can no longer see or change.
+      notify: _notify && canNotifyFor(_date!),
     );
     Navigator.pop(context, event);
   }
@@ -264,16 +268,18 @@ class _EventEditScreenState extends State<EventEditScreen> {
               controller: _emojiController,
               decoration: const InputDecoration(labelText: 'Icon (optional)'),
             ),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              value: _notify,
-              onChanged: _setNotify,
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Remind me'),
-              subtitle: const Text(
-                'A notification on milestone days, at 9am.',
+            // Only a future date has an arrival to announce, so the
+            // control simply isn't offered for anything else.
+            if (_date != null && canNotifyFor(_date!)) ...[
+              const SizedBox(height: 8),
+              SwitchListTile(
+                value: _notify,
+                onChanged: _setNotify,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Remind me on the day'),
+                subtitle: const Text('At 9am'),
               ),
-            ),
+            ],
           ],
         ),
       ),
