@@ -54,7 +54,8 @@ The application should remain intentionally small and avoid unnecessary backend 
 - User accounts
 - Firebase
 - Analytics
-- Push notifications
+- Push notifications (remote/APNs — *local* notifications are a
+  different mechanism and are in scope as of Phase 26)
 - Cloud sync
 - Subscriptions
 - In-app purchases
@@ -1217,11 +1218,11 @@ of Phases 21–22, since it's about shipping what already exists rather
 than an optional additional learning exercise.
 
 Phase 20 is now done (the app shipped at 1.0.1). Phases 21 and 23–25
-have since been **explicitly requested** and are real upcoming work
-rather than hypothetical exercises; work them in order unless told
-otherwise. Phase 22 (Lock Screen Widgets) remains genuinely optional and
-unrequested — its number places it before 23–25 but its priority does
-not.
+were explicitly requested and are all done. **Phase 26 (Milestone
+Moments) is the active next phase** — also explicitly requested, and real
+upcoming work rather than a hypothetical exercise. Phase 22 (Lock Screen
+Widgets) remains genuinely optional and unrequested — its number places
+it before 23–26 but its priority does not.
 
 ## Phase 20 — Prepare for App Store Submission
 
@@ -1885,6 +1886,258 @@ Unit tests for the new helper covering a DST boundary and month/year
 rollover, matching the existing style in
 `test/date_calculations_test.dart`, plus a widget test creating an event
 through offset mode.
+
+---
+
+## Phase 26 — Milestone Moments
+
+Acknowledge the days that matter: the day a countdown finally arrives, and
+the round-number milestones a count-up passes on its way (100 days, 365
+days, 1,000 days). The widget and the in-app card change their appearance
+on those days, and an optional local notification announces them.
+
+**Why these are one phase, not two.** "Today is the day" and "today is a
+milestone" are the same predicate over the same number. The widget renders
+it, the notification announces it, and the card mirrors it. Split across
+two phases, the rule for what counts as a milestone gets written twice and
+the two copies drift.
+
+The notification half is also what makes the widget half worth building.
+Nobody watches a widget waiting for midnight — a local notification is the
+only way this app can reach the user without them going looking.
+
+### The plan's "no push notifications" line
+
+The Explicitly Out of Scope for V1 list rules out push notifications, and
+that still holds: no APNs, no device tokens, no server, no push
+entitlement. **Local notifications are a different mechanism** —
+`UNUserNotificationCenter` schedules them on-device, and nothing leaves
+the phone. That list has been amended to say so rather than leaving the
+two to blur together.
+
+Nothing about this phase changes the App Privacy questionnaire answers
+("Data Not Collected" stays accurate), the Export Compliance answer, or
+the privacy policy beyond one clarifying sentence.
+
+### 26a — The milestone predicate
+
+Canonical definition goes in `lib/utils/date_calculations.dart`, next to
+the rest of the day math, as a pure function over the already-computed day
+count — not over dates. Something like `milestoneFor(int days)` returning
+a small enum or `null`.
+
+The rules:
+
+- **Day zero is its own case.** `days == 0` means today is the day.
+- **Round numbers for count-ups**: a short ordered constant list (7, 30,
+  100, 365, 500, 1,000) plus a rule for beyond it (every 1,000, or every
+  500 — pick one and write it down). Keep the list a constant, not
+  scattered literals.
+- **Negative counts never match.** `formatDayCount` deliberately preserves
+  the minus sign for an `until` event whose date has passed and hasn't been
+  re-saved since (see Phase 25), so `days` can be negative. Guard for it —
+  `-100` is not a milestone.
+
+The Swift side gets a mirror of this in `WidgetEventStore.swift`, kept in
+sync by hand and commented as such, exactly like `dayCount(for:on:)`
+already mirrors `daysSince`/`daysUntil`. Guiding principle 4 says don't
+duplicate domain logic in Swift; a six-line integer predicate is the
+smallest possible exception and is cheaper than inventing a way to ship
+the answer across the App Group. Note the alternative that was considered
+and rejected: precomputing a milestone flag in Flutter and putting it in
+the payload doesn't work, because the widget renders seven days ahead and
+the flag would be stale for six of them.
+
+### 26b — Widget rendering
+
+**No `SimpleEntry` change is needed, and that's the point.** The existing
+entry already carries `dayCount: Int?`, and:
+
+- `nil` is already the empty-state sentinel ("Add an event" / "Choose an
+  event"), so `0` is unambiguous.
+- Both directions converge on the day itself: an `until` event computes
+  `today → eventDate` = 0, and Phase 25's inference saves a today-dated
+  event as `since`, which computes `eventDate → today` = 0. **The trigger
+  is just `entry.dayCount == 0`** — no direction check, no new field.
+
+Adding a state enum to `SimpleEntry` would be a type for zero behavior
+change, the same call Phase 21d made about the three empty states.
+
+**The timeline needs no work either.** `timeline(for:in:)` already emits
+seven daily entries with `.atEnd`, so the day-zero entry is generated in
+advance and expires itself at the next midnight. Any milestone inside the
+seven-day window is likewise already scheduled.
+
+What to render, in value-per-line order:
+
+1. **Replace the number with "Today".** The strongest signal and the least
+   layout risk — a word at `displayMedium` weight reads as an event, not as
+   a rendering bug the way a bare `0` does. For a milestone, keep the
+   number and change the treatment around it.
+2. **Flip the background to the accent** (`#B49CE8` with `onAccent` ink).
+   Both tokens exist and their contrast was already measured in Phase 23,
+   so this needs no new color work.
+3. **Static sparkle or confetti marks**, if wanted — a `Canvas` or a few
+   positioned shapes.
+
+**Don't attempt animation.** Widgets are archived SwiftUI views rendered
+out of process; there are no animation loops. iOS 17+ does transition
+between timeline entries automatically, so the flip in at midnight
+animates for free, but that's the whole budget.
+
+**A second mascot pose is a decision, not an inference.** The standing
+direction is one pose only, and specifically not the per-event poses in
+`docs/dayward-widget-mockups.png`. A celebration pose is a different rule
+— driven by state rather than by which event it is — but it's still a
+change to that direction, so ask before drawing one.
+
+Add `#Preview`s for day zero and a milestone at both families. Previews
+render without booting a simulator and are the fastest check on the
+`.lineLimit(1)` truncation risk that bit Phase 21d.
+
+### 26c — In-app card parity
+
+`lib/widgets/event_card.dart` must get the same treatment or the widget
+and the list disagree on the same day, which reads as a bug.
+
+The card already computes `days` itself, so it calls the same predicate.
+Its background is currently `_cardColor(context)` — the deterministic tint
+cycle keyed off `event.id.hashCode` in light mode, `surfaceDark` in dark.
+A milestone overrides that for the day. Keep the override inside
+`_cardColor` rather than branching in `build`, so there stays exactly one
+place that decides a card's color.
+
+### 26d — Local notifications
+
+**Recommended: a hand-rolled `MethodChannel`, not
+`flutter_local_notifications`.** Roughly sixty lines of Swift, and the
+`WidgetBridge` → `AppDelegate` pattern to copy is already in the repo.
+Guiding principle 8 (learn the platform boundary rather than hide it)
+argues for it, and principle 7 argues against the package, whose real
+value is Android support and timezone handling that this project doesn't
+need. Note this is a genuine trade — the package handles permission-flow
+and iOS-version edge cases that hand-rolled code has to get right itself.
+
+- **New channel, not a new method on the existing one.**
+  `net.leerichardson.dayscounter/notifications`. The existing channel is
+  named `/widget`; hanging notification scheduling off it makes the name a
+  lie. New file `lib/services/notification_bridge.dart`, mirroring
+  `WidgetBridge`'s shape — including the `MissingPluginException` catch,
+  which is what lets the non-iOS test run.
+- **Every widget test's `setUp` must mock this channel too.** This is the
+  same trap documented for `widget_bridge_mock.dart`: `flutter_test`'s
+  binary messenger *hangs forever* on an unmocked channel rather than
+  throwing, so `pumpAndSettle()` times out with no useful error. Add a
+  `notification_bridge_mock.dart` alongside the existing fake and register
+  both.
+- **Use `UNCalendarNotificationTrigger` with `DateComponents`. Never
+  `UNTimeIntervalNotificationTrigger`** — interval triggers add fixed
+  24-hour blocks and drift across a DST boundary, the exact bug class
+  `date_calculations.dart` exists to prevent. A calendar trigger also
+  follows the user across time zones.
+- **The 64-pending cap is iOS-wide per app** and is the real constraint.
+  Schedule only the next one or two milestones per event plus its day
+  zero; don't enumerate every future milestone.
+- **There is no background execution.** Everything must be scheduled while
+  the app is in the foreground: on `EventsNotifier.build()` and after every
+  mutation, awaited for the same reason `_syncEventsToWidget` is awaited —
+  the app can be backgrounded moments after an edit and cut an in-flight
+  platform-channel call off mid-write. The upside of the 64-cap approach
+  is that a user who saves an event and never opens the app again still
+  gets that event's next milestone.
+- **Use stable identifiers**, e.g. `"<eventId>-<dayCount>"`, and
+  `removePendingNotificationRequests` for an event's ids before
+  rescheduling it. Rescheduling on every mutation means duplicates
+  otherwise.
+- **Permission on first enable, not at launch.**
+  `requestAuthorization(options: [.alert, .sound])`. A permission prompt
+  before the user has asked for anything is the fastest way to a
+  permanent denial.
+- **`FlutterAppDelegate` already declares conformance to
+  `UNUserNotificationCenterDelegate`.** Don't blindly reassign
+  `UNUserNotificationCenter.current().delegate` — check what the superclass
+  is doing first.
+- No `Info.plist` usage-description key is required for local
+  notifications, and no push entitlement.
+- Default fire time: 9:00 local. A notification at midnight is a
+  notification nobody wanted.
+
+### 26e — Lock screen content is a real privacy decision
+
+Notification text renders on the lock screen, in front of whoever else is
+in the room. This app's headline example is "Last Drink", and its likely
+users include people counting sobriety days. "Last Drink — 1,000 days" on
+a lock screen is a genuine leak, not a hypothetical one.
+
+Offer a setting to send the milestone without the event name — "A
+milestone today" or similar — and default it thoughtfully. This is the
+highest-value few lines in the phase and is worth the App Store
+description mentioning.
+
+### 26f — Where the opt-in lives
+
+Notifications should be **per event, opt-in**. Most events don't warrant
+one.
+
+That means a per-event flag, which is the first real pressure on guiding
+principle 2 (keep the domain model small) since the model was written. The
+principle says don't add fields *until a phase needs one* — this phase
+does, so the field is in bounds. Two options:
+
+1. **A `notify` bool on `DateEvent`** (recommended). `fromJson` defaults it
+   to `false` when the key is absent, so existing `events.json` files load
+   unchanged. The App Group payload gains a key the widget ignores —
+   Swift's `Decodable` skips unrecognized keys by default, so
+   `WidgetEvent` needs no change at all.
+2. A parallel file keyed by event id, like the retired
+   `featured_event_id.txt`. Avoids touching the model, but means two files
+   that can disagree about which events exist, and a deleted event leaves
+   an orphan. Phase 21 just finished cleaning up exactly that shape.
+
+Take option 1. Whether the event notifies is part of what the event is to
+the user, not a separate setting about it.
+
+The lock-screen-privacy toggle from 26e is genuinely app-wide, so that one
+does belong in its own small settings store.
+
+### 26g — What can be verified where
+
+- `flutter test` covers the predicate directly: day zero, each threshold,
+  the values either side of a threshold, and negatives not matching. Add
+  card tests for milestone and non-milestone rendering, and a bridge test
+  asserting what gets scheduled — including that the pending count stays
+  under the cap with a deliberately large event list.
+- Xcode Previews cover the widget's day-zero and milestone layouts without
+  booting anything.
+- **The iOS Simulator does deliver local notifications**, so the schedule →
+  fire path, the permission prompt, and the lock-screen text can all be
+  checked there.
+- Device-only: how the whole thing actually feels, and confirming a
+  notification arrives on a day the app was never opened.
+
+Order the work to fail fast: predicate and its tests, then the widget
+render (the first visible payoff and the cheapest), then card parity, then
+notifications last, since they have the most moving parts and the longest
+feedback loop.
+
+Success criterion:
+
+An event dated today shows a distinct "today" treatment on both the Home
+Screen widget and its in-app card, reverting on its own the next day; an
+event crossing a milestone shows the milestone treatment; and an event
+with notifications enabled delivers a local notification on that day with
+no network request made by the app.
+
+Verify:
+
+```bash
+flutter test
+flutter analyze
+```
+
+Plus a simulator pass: set an event to today, confirm both surfaces change
+and a notification fires; advance the simulator's date by a day and
+confirm both revert.
 
 ---
 

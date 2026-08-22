@@ -394,9 +394,13 @@ now flips to `since` the next time it's saved. Since inference took away
 the toggle that "In days" needed, that mode has its own **Ago / From
 now** control.
 
-**All five requested features are done and nothing is queued.** Phase 22
-(Lock Screen Widgets) and the "Post-V1 Learning Ideas" list remain
-optional and unrequested — don't treat them as an implicit next step.
+**All five requested features are done.** **Phase 26 — Milestone Moments
+is the active next phase**, requested on 2026-08-21 and drafted into
+PROJECT_PLAN.md: day-zero and round-number milestone treatments on the
+widget and the in-app card, plus optional on-device local notifications.
+Nothing has been implemented yet. Phase 22 (Lock Screen Widgets) and the
+"Post-V1 Learning Ideas" list remain optional and unrequested — don't
+treat them as an implicit next step.
 
 **Design/look-and-feel pass (optional, post-V1) is done**, targeting
 [docs/dayward-widget-mockups.png](docs/dayward-widget-mockups.png) — a
@@ -474,7 +478,8 @@ automated in this session (no accessibility/UI-automation access).
    duplicate domain logic in Swift.
 5. No backend, auth, accounts, analytics, push notifications, cloud sync,
    subscriptions, IAP, social features, calendar integration, or CI/CD in
-   V1. No Android support is required.
+   V1. No Android support is required. ("Push" here means remote/APNs —
+   *local* notifications need no server and are in scope as of Phase 26.)
 6. Avoid premature architecture — no `domain/`, `application/`,
    `presentation/`, `infrastructure/`, `ports/`, `adapters/`, `usecases/`
    layers. Keep the flat structure below.
