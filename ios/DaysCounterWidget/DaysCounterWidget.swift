@@ -145,6 +145,13 @@ struct DaysCounterWidgetEntryView: View {
 
     private var mascotImage: String { isCelebrating ? "MascotCelebration" : "Mascot" }
 
+    /// The celebration art carries confetti well outside the character, so
+    /// at a shared frame size its calendar body renders visibly smaller than
+    /// the walking pose's and the character reads as shrunken. A larger frame
+    /// puts the two bodies at the same presence; the extra few points beyond
+    /// that are deliberate weight for the occasion.
+    private var mascotSize: CGFloat { isCelebrating ? 96 : 72 }
+
     var body: some View {
         switch family {
         case .systemMedium:
@@ -235,7 +242,7 @@ struct DaysCounterWidgetEntryView: View {
             Image(mascotImage)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 72, height: 72)
+                .frame(width: mascotSize, height: mascotSize)
         }
         .padding(16)
     }

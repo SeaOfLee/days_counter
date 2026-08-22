@@ -100,16 +100,21 @@ Iterable<PendingNotification> _notificationsFor(
 
   yield PendingNotification(
     id: '${event.id}-0',
-    title: _title(event),
-    body: "Today's the day.",
+    title: notificationTitle,
+    body: notificationBody,
     fireDate: fireDate,
   );
 }
 
-/// Matches how the event cards read, e.g. "🏖 Vacation".
-String _title(DateEvent event) {
-  return [event.emoji, event.title].whereType<String>().join(' ');
-}
+/// Deliberately says nothing about which event arrived.
+///
+/// Notification text renders on the lock screen, in front of whoever else
+/// is in the room, and the names people give these events are often the
+/// private part — this app's own headline example is "Last Drink". Naming
+/// the event would be more useful and is the obvious thing to want; it is
+/// traded away on purpose. Opening the app shows which date it was.
+const notificationTitle = 'Dayward';
+const notificationBody = "Today's the day.";
 
 /// Whether [date] can carry a reminder at all — that is, whether its
 /// arrival is still ahead. Shared with the editor so the toggle and the

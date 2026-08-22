@@ -2013,15 +2013,14 @@ at the same 150/300/450px greyscale-plus-alpha sizes and framing as
 `Mascot.imageset`. Nothing in Swift references it yet; wiring it to the
 `dayCount == 0` branch is this phase's work.
 
-**Known issue, deferred by choice: the celebration mascot reads too small.**
-Confirmed on device 2026-08-22 — the confetti spreads wider than the
-character, so inside the same 72pt frame the celebration pose's calendar
-body renders noticeably smaller than the walking pose's, and the character
-"feels" smaller and is harder to see. It is a sizing problem, not an art
-problem, so the fix is to give the milestone branch a larger frame (or to
-scale the image up and let the confetti clip) rather than to re-crop or
-redraw the asset. Left as-is deliberately; pick it up when the rest of the
-phase is done.
+**Fixed: the celebration mascot used to render too small.** The confetti
+spreads well outside the character, so at the walking pose's 72pt frame the
+celebration's calendar body came out visibly smaller and the character read
+as shrunken. The milestone branch now draws at 96pt. That number came from
+compositing both assets at 72/88/96/104 and comparing the calendar bodies:
+88 matches the walking pose's presence, and the extra few points are
+deliberate weight for the occasion. Anything beyond about 104 starts
+clipping confetti at the frame edge.
 
 Add `#Preview`s for day zero and a milestone at both families. Previews
 render without booting a simulator and are the fastest check on the
@@ -2098,17 +2097,28 @@ native handlers inside `#if DEBUG`: fire a test notification ten seconds
 out, re-run the scheduling call, and list what iOS is actually holding.
 Confirmed working on the simulator — planned 2, accepted 2.
 
-### 26e — Lock screen content is a real privacy decision
+### 26e — Lock screen content — **done, no setting**
 
 Notification text renders on the lock screen, in front of whoever else is
 in the room. This app's headline example is "Last Drink", and its likely
 users include people counting sobriety days. "Last Drink — 1,000 days" on
 a lock screen is a genuine leak, not a hypothetical one.
 
-Offer a setting to send the milestone without the event name — "A
-milestone today" or similar — and default it thoughtfully. This is the
-highest-value few lines in the phase and is worth the App Store
-description mentioning.
+**Resolved without a setting: the notification is always generic.** Title
+"Dayward", body "Today's the day.", with the event's name and emoji left
+out entirely. A toggle was considered and dropped — it would have needed
+somewhere for an app-wide setting to live, and the parallel-file pattern
+that would have implied was deliberately deleted in Phase 21.
+
+The trade is real and taken on purpose: naming the event would be more
+useful, and someone tracking several dates can't tell from the banner which
+one arrived. Opening the app answers that. Being useful on the lock screen
+and being safe on the lock screen are in direct conflict here, and safe
+wins for this app's subject matter.
+
+If a setting is ever wanted, `notificationTitle` and `notificationBody` in
+`lib/services/notification_schedule.dart` are the two constants to make
+conditional.
 
 ### 26f — Where the opt-in lives
 

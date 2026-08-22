@@ -467,10 +467,20 @@ vs accepted, and lists what iOS is actually holding. Notifications are days
 away and fire at 9am, so without it the path is unverifiable short of moving
 the clock.
 
-**Still open: the lock-screen privacy setting** — whether a notification
-reads "Last Drink — 1,000 days" or something generic on a lock screen in
-front of other people. Blocked on deciding where an app-wide setting lives,
-since the parallel-file pattern was deliberately removed in Phase 21. Phase 22 (Lock Screen Widgets) and the
+**Notification text is deliberately generic** — title "Dayward", body
+"Today's the day.", with the event's name and emoji left out entirely.
+Notifications render on the lock screen in front of whoever else is in the
+room, and the names people give these events are often the private part.
+Someone tracking several dates can't tell from the banner which one
+arrived; that is the accepted cost, and no setting was added. The two
+constants to make conditional if that changes are `notificationTitle` and
+`notificationBody`.
+
+**The celebration mascot draws at 96pt, the walking one at 72pt.** Not an
+oversight: the celebration art carries confetti well outside the character,
+so at a shared frame its calendar body renders visibly smaller and the
+character reads as shrunken. 96 was picked by compositing both assets at
+several sizes and matching the calendar bodies. Phase 22 (Lock Screen Widgets) and the
 "Post-V1 Learning Ideas" list remain optional and unrequested — don't
 treat them as an implicit next step.
 

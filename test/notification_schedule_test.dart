@@ -33,7 +33,8 @@ void main() {
 
       expect(scheduled, hasLength(1));
       expect(scheduled.single.id, 'a-0');
-      expect(scheduled.single.title, '🏖 Vacation');
+      // Says nothing about which event — see notificationTitle.
+      expect(scheduled.single.title, 'Dayward');
       expect(scheduled.single.body, "Today's the day.");
       expect(scheduled.single.fireDate, DateTime(2026, 8, 29, 9));
     });
@@ -149,6 +150,26 @@ void main() {
     });
   });
 
+  group('lock screen privacy', () {
+    test('the event name never reaches the notification', () {
+      final scheduled = plannedNotifications(
+        [
+          event(
+            id: 'a',
+            title: 'Last Drink',
+            emoji: '🍺',
+            date: DateTime(2026, 8, 29),
+          ),
+        ],
+        now: _now,
+      );
+
+      expect(scheduled.single.title, isNot(contains('Last Drink')));
+      expect(scheduled.single.body, isNot(contains('Last Drink')));
+      expect(scheduled.single.title, isNot(contains('🍺')));
+    });
+  });
+
   group('serialization', () {
     test('sends date components, not an instant', () {
       final scheduled = plannedNotifications(
@@ -158,7 +179,7 @@ void main() {
 
       expect(scheduled.single.toJson(), {
         'id': 'a-0',
-        'title': 'Vacation',
+        'title': 'Dayward',
         'body': "Today's the day.",
         'year': 2026,
         'month': 8,
