@@ -459,6 +459,20 @@ permission granted, zero pending. Cast each element separately, and have
 native handlers return a count of what they accepted so a decode failure is
 a number that disagrees rather than silence.
 
+**Trap: `#if DEBUG` is false in Runner's Swift unless you add it.** Flutter's
+generated `Runner` target does **not** set
+`SWIFT_ACTIVE_COMPILATION_CONDITIONS` on any configuration — only
+`RunnerTests` and the widget extension do, which makes a casual grep of
+`project.pbxproj` look like it's covered. Anything inside `#if DEBUG` in
+[ios/Runner/AppDelegate.swift](ios/Runner/AppDelegate.swift) silently
+compiles to nothing, method channel cases fall through to
+`FlutterMethodNotImplemented`, and Dart sees `MissingPluginException` — so
+a debug-only handler looks like a channel that isn't wired up at all.
+Runner's Debug config now sets `SWIFT_ACTIVE_COMPILATION_CONDITIONS =
+"DEBUG $(inherited)"`. Verify with `strings` on
+`Runner.app/Runner.debug.dylib` (debug symbols live there, not in
+`Runner.app/Runner`) and confirm the release binary has none.
+
 **There is a debug menu** ([lib/screens/debug_menu_screen.dart](lib/screens/debug_menu_screen.dart)),
 behind a bug icon in the app bar shown only when `kDebugMode` is true, with
 its native handlers inside `#if DEBUG` so neither half ships. It fires a test
