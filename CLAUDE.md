@@ -715,15 +715,25 @@ a mismatch trips `ITMS-90473` on upload; verify shipped versions from the
 built bundles, not the project file; and confirm the export is signed
 *Apple Distribution*, not *Apple Development*.
 
-Current release state: the App Store has **1.1.0**, which shipped Phases
-21, 23, 24 and 25 — configurable widgets, the dark-mode readability fixes,
-drag-to-reorder and relative day entry. The repo is at **1.2.0 (5)**,
-prepared but not yet submitted, carrying Phase 26: milestone days on the
-widget and the event card, and arrival-day reminders.
+Current release state: **1.2.0 (5) was submitted for review on
+2026-08-22** and is awaiting Apple's decision. It carries Phase 26 —
+milestone days on the widget and the event card, and arrival-day
+reminders. The App Store's live version until it clears is **1.1.0**,
+which shipped Phases 21, 23, 24 and 25.
 
-Both `pubspec.yaml` and the widget extension's three configs are at 1.2.0
-(5) and were verified from the built bundles rather than the project file.
-Bump both together next time — a mismatch trips `ITMS-90473` on upload.
+Verified from the exported IPA rather than the project file: app and
+widget extension both at 1.2.0 (5), signed *Apple Distribution*. The build
+number was **not** raised during export this time, despite Flutter's
+`ExportOptions.plist` setting `manageAppVersionAndBuildNumber = true`, so
+`pubspec.yaml` needed no catch-up — check it anyway next release.
+
+Bump `pubspec.yaml` and the widget extension's three configs together; a
+mismatch trips `ITMS-90473` on upload. Note the *Runner* target's own
+`MARKETING_VERSION`/`CURRENT_PROJECT_VERSION` (what Xcode's General →
+Identity panel edits) are inert and currently read a stale 1.1 — Runner's
+`Info.plist` uses `$(FLUTTER_BUILD_NAME)`/`$(FLUTTER_BUILD_NUMBER)` from
+`Generated.xcconfig` instead. Only the widget extension reads those
+settings, because it sets `GENERATE_INFOPLIST_FILE = YES`.
 
 ## Testing expectations
 

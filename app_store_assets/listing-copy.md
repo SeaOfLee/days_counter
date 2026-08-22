@@ -5,7 +5,7 @@ App Store Connect's version page. Everything that *doesn't* change per
 release — app name, subtitle, keywords, category, privacy answers, export
 compliance, review contact — lives in [metadata.md](metadata.md).
 
-**Current version: 1.2.0**
+**Current version: 1.2.0** — submitted for review 2026-08-22.
 
 How to use this at release time: update "What's New" for the new version,
 revise the Description if features were added, and leave Promotional Text
