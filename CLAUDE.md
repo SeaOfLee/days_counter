@@ -728,12 +728,19 @@ number was **not** raised during export this time, despite Flutter's
 `pubspec.yaml` needed no catch-up — check it anyway next release.
 
 Bump `pubspec.yaml` and the widget extension's three configs together; a
-mismatch trips `ITMS-90473` on upload. Note the *Runner* target's own
-`MARKETING_VERSION`/`CURRENT_PROJECT_VERSION` (what Xcode's General →
-Identity panel edits) are inert and currently read a stale 1.1 — Runner's
-`Info.plist` uses `$(FLUTTER_BUILD_NAME)`/`$(FLUTTER_BUILD_NUMBER)` from
-`Generated.xcconfig` instead. Only the widget extension reads those
-settings, because it sets `GENERATE_INFOPLIST_FILE = YES`.
+mismatch trips `ITMS-90473` on upload.
+
+**The Runner target's own `MARKETING_VERSION`/`CURRENT_PROJECT_VERSION`
+are left stale on purpose — do not "fix" them.** They are what Xcode's
+General → Identity panel edits, and they are inert: Runner's `Info.plist`
+takes its version from `$(FLUTTER_BUILD_NAME)`/`$(FLUTTER_BUILD_NUMBER)`
+via `Generated.xcconfig` instead. Only the widget extension reads those
+build settings, because it alone sets `GENERATE_INFOPLIST_FILE = YES`.
+They currently read 1.1 against a shipped 1.2.0, and are expected to drift
+further with every release. That drift is the point: a value that is
+visibly wrong can't be mistaken for the source of truth, whereas one kept
+in sync invites the next person to edit it and wonder why the build
+ignores them.
 
 ## Testing expectations
 
