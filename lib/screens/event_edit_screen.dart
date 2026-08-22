@@ -271,11 +271,21 @@ class _EventEditScreenState extends State<EventEditScreen> {
             // Only a future date has an arrival to announce, so the
             // control simply isn't offered for anything else.
             if (_date != null && canNotifyFor(_date!)) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
+              // Takes the fill and radius the text fields get from
+              // inputDecorationTheme, so the switch reads as another row of
+              // the same form rather than something dropped beside it.
+              // Set on the tile itself rather than wrapped in a coloured
+              // box: ListTile paints its own background, and listTileTheme
+              // supplies a card tone here that would otherwise cover it.
               SwitchListTile(
                 value: _notify,
                 onChanged: _setNotify,
-                contentPadding: EdgeInsets.zero,
+                tileColor: Theme.of(context).inputDecorationTheme.fillColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                 title: const Text('Remind me on the day'),
                 subtitle: const Text('At 9am'),
               ),
