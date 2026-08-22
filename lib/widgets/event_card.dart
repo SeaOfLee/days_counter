@@ -10,7 +10,10 @@ class EventCard extends StatelessWidget {
   final DateEvent event;
   final VoidCallback? onTap;
 
-  Color _cardColor(BuildContext context) {
+  Color _cardColor(BuildContext context, Milestone? milestone) {
+    // A milestone overrides the usual surface in both themes, so the card
+    // and the Home Screen widget agree on what today is.
+    if (milestone != null) return AppColors.accent;
     if (Theme.of(context).brightness == Brightness.dark) {
       return AppColors.surfaceDark;
     }
@@ -18,7 +21,8 @@ class EventCard extends StatelessWidget {
     return tints[event.id.hashCode.abs() % tints.length];
   }
 
-  Color _badgeColor(BuildContext context) {
+  Color _badgeColor(BuildContext context, Milestone? milestone) {
+    if (milestone != null) return Colors.white;
     return Theme.of(context).brightness == Brightness.dark
         ? AppColors.moonBadgeDark
         : Colors.white;
@@ -31,9 +35,12 @@ class EventCard extends StatelessWidget {
         ? daysSince(event.date)
         : daysUntil(event.date);
     final unitLabel = days == 1 ? 'day' : 'days';
+    final milestone = milestoneFor(days);
+    final foreground = milestone == null ? null : AppColors.onAccent;
+    final unitForeground = milestone == null ? null : AppColors.onAccentMuted;
 
     return Card(
-      color: _cardColor(context),
+      color: _cardColor(context, milestone),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -46,7 +53,7 @@ class EventCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: _badgeColor(context),
+                  color: _badgeColor(context, milestone),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
@@ -66,7 +73,7 @@ class EventCard extends StatelessWidget {
                   children: [
                     Text(
                       event.title,
-                      style: textTheme.titleLarge,
+                      style: textTheme.titleLarge?.copyWith(color: foreground),
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
@@ -74,9 +81,30 @@ class EventCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
-                        Text(formatDayCount(days), style: textTheme.displayMedium),
-                        const SizedBox(width: 6),
-                        Text(unitLabel, style: textTheme.titleMedium),
+                        if (milestone == Milestone.today)
+                          // "0 days" reads like a bug on the one day the
+                          // count matters most.
+                          Text(
+                            'Today',
+                            style: textTheme.displayMedium?.copyWith(
+                              color: foreground,
+                            ),
+                          )
+                        else ...[
+                          Text(
+                            formatDayCount(days),
+                            style: textTheme.displayMedium?.copyWith(
+                              color: foreground,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            unitLabel,
+                            style: textTheme.titleMedium?.copyWith(
+                              color: unitForeground,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],

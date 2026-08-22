@@ -395,10 +395,26 @@ the toggle that "In days" needed, that mode has its own **Ago / From
 now** control.
 
 **All five requested features are done.** **Phase 26 — Milestone Moments
-is the active next phase**, requested on 2026-08-21 and drafted into
+is in progress**, requested on 2026-08-21 and drafted into
 PROJECT_PLAN.md: day-zero and round-number milestone treatments on the
 widget and the in-app card, plus optional on-device local notifications.
-Nothing has been implemented yet. Phase 22 (Lock Screen Widgets) and the
+
+The visual half is done. `milestoneFor` in
+[lib/utils/date_calculations.dart](lib/utils/date_calculations.dart) is the
+single definition — day zero is `Milestone.today`, and 7/30/100/365 plus
+every multiple of 500 are `Milestone.round`; negatives never match, since
+a passed `until` event renders a negative count until it is next saved.
+It is mirrored by `milestone(for:)` in
+[ios/DaysCounterWidget/WidgetEventStore.swift](ios/DaysCounterWidget/WidgetEventStore.swift),
+which cannot be avoided by shipping a precomputed flag in the App Group
+payload: the widget renders seven days ahead, so a flag computed for today
+would be stale for six of those entries. Both surfaces take the accent
+(`#B49CE8`) with `onAccent`/`onAccentMuted` inks on a milestone, day zero
+reads "Today" instead of a bare `0`, and the widget swaps in
+`MascotCelebration`. `SimpleEntry` needed no new field — `dayCount == nil`
+was already the empty-state sentinel, so `0` is unambiguous.
+
+**Local notifications (26d–26f) are not started.** Phase 22 (Lock Screen Widgets) and the
 "Post-V1 Learning Ideas" list remain optional and unrequested — don't
 treat them as an implicit next step.
 

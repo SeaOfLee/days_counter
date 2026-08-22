@@ -25,6 +25,14 @@ private let darkTextPrimary = Color(red: 0.945, green: 0.929, blue: 0.980) // #F
 private let darkTextMuted = Color(red: 0.553, green: 0.525, blue: 0.639) // #8D86A3
 private let darkDivider = Color(red: 0.173, green: 0.153, blue: 0.235) // #2C2740
 
+// Milestone treatment. The accent and its ink are the same tokens the app
+// uses for the FAB and selected segments; onAccentMuted is new here, since
+// the widget needs a second readable weight on the accent that the app has
+// never wanted. Measured against #B49CE8: ink 6.7:1, muted 5.0:1.
+private let accent = Color(red: 0.706, green: 0.612, blue: 0.910) // #B49CE8
+private let onAccent = Color(red: 0.141, green: 0.122, blue: 0.200) // #241F33
+private let onAccentMuted = Color(red: 0.227, green: 0.200, blue: 0.314) // #3A3350
+
 struct Provider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
         SimpleEntry(date: Date(), title: "🎉 Birthday", dayCount: 42, dateLine: "Until June 19")
@@ -111,9 +119,31 @@ struct DaysCounterWidgetEntryView: View {
     @Environment(\.colorScheme) var colorScheme
     var entry: Provider.Entry
 
-    private var textPrimary: Color { colorScheme == .dark ? darkTextPrimary : lightTextPrimary }
-    private var textMuted: Color { colorScheme == .dark ? darkTextMuted : lightTextMuted }
-    private var divider: Color { colorScheme == .dark ? darkDivider : lightDivider }
+    /// Non-nil on the days worth acknowledging. Both kinds get the same
+    /// celebratory surface; what differs is whether the headline is a word
+    /// or a number.
+    private var milestoneKind: Milestone? {
+        entry.dayCount.flatMap { milestone(for: $0) }
+    }
+
+    private var isCelebrating: Bool { milestoneKind != nil }
+
+    private var textPrimary: Color {
+        if isCelebrating { return onAccent }
+        return colorScheme == .dark ? darkTextPrimary : lightTextPrimary
+    }
+
+    private var textMuted: Color {
+        if isCelebrating { return onAccentMuted }
+        return colorScheme == .dark ? darkTextMuted : lightTextMuted
+    }
+
+    private var divider: Color {
+        if isCelebrating { return onAccentMuted.opacity(0.35) }
+        return colorScheme == .dark ? darkDivider : lightDivider
+    }
+
+    private var mascotImage: String { isCelebrating ? "MascotCelebration" : "Mascot" }
 
     var body: some View {
         switch family {
@@ -139,12 +169,22 @@ struct DaysCounterWidgetEntryView: View {
                 .minimumScaleFactor(0.9)
 
             if let dayCount = entry.dayCount {
-                Text(dayCount.formatted())
-                    .font(.system(size: 34, weight: .heavy, design: .rounded))
-                    .foregroundStyle(textPrimary)
-                Text(dayCount == 1 ? "day" : "days")
-                    .font(.system(.caption, design: .rounded, weight: .semibold))
-                    .foregroundStyle(textMuted)
+                if milestoneKind == .today {
+                    // A bare "0 days" reads like a rendering bug on the one
+                    // day the count matters most.
+                    Text("Today")
+                        .font(.system(size: 34, weight: .heavy, design: .rounded))
+                        .foregroundStyle(textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                } else {
+                    Text(dayCount.formatted())
+                        .font(.system(size: 34, weight: .heavy, design: .rounded))
+                        .foregroundStyle(textPrimary)
+                    Text(dayCount == 1 ? "day" : "days")
+                        .font(.system(.caption, design: .rounded, weight: .semibold))
+                        .foregroundStyle(textMuted)
+                }
             }
         }
         .padding(16)
@@ -161,12 +201,20 @@ struct DaysCounterWidgetEntryView: View {
 
                 if let dayCount = entry.dayCount {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(dayCount.formatted())
-                            .font(.system(size: 40, weight: .heavy, design: .rounded))
-                            .foregroundStyle(textPrimary)
-                        Text(dayCount == 1 ? "day" : "days")
-                            .font(.system(.callout, design: .rounded, weight: .semibold))
-                            .foregroundStyle(textMuted)
+                        if milestoneKind == .today {
+                            Text("Today")
+                                .font(.system(size: 40, weight: .heavy, design: .rounded))
+                                .foregroundStyle(textPrimary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                        } else {
+                            Text(dayCount.formatted())
+                                .font(.system(size: 40, weight: .heavy, design: .rounded))
+                                .foregroundStyle(textPrimary)
+                            Text(dayCount == 1 ? "day" : "days")
+                                .font(.system(.callout, design: .rounded, weight: .semibold))
+                                .foregroundStyle(textMuted)
+                        }
                     }
 
                     if let dateLine = entry.dateLine {
@@ -184,7 +232,7 @@ struct DaysCounterWidgetEntryView: View {
 
             Spacer()
 
-            Image("Mascot")
+            Image(mascotImage)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 72, height: 72)
@@ -195,9 +243,16 @@ struct DaysCounterWidgetEntryView: View {
 
 private struct WidgetBackground: View {
     @Environment(\.colorScheme) var colorScheme
+    var entry: SimpleEntry
 
     var body: some View {
-        colorScheme == .dark ? darkBackground : cardLavender
+        if entry.dayCount.flatMap({ milestone(for: $0) }) != nil {
+            // Same accent in both themes: a milestone should read as a
+            // deliberate break from the everyday surface, not a tint of it.
+            accent
+        } else {
+            colorScheme == .dark ? darkBackground : cardLavender
+        }
     }
 }
 
@@ -209,7 +264,7 @@ struct DaysCounterWidget: Widget {
             if #available(iOS 17.0, *) {
                 DaysCounterWidgetEntryView(entry: entry)
                     .containerBackground(for: .widget) {
-                        WidgetBackground()
+                        WidgetBackground(entry: entry)
                     }
             } else {
                 DaysCounterWidgetEntryView(entry: entry)
@@ -223,13 +278,15 @@ struct DaysCounterWidget: Widget {
     }
 }
 
-// All three entry states, so the empty-state layouts get checked without
+// Every entry state, so the empty and milestone layouts get checked without
 // booting a simulator.
 #Preview(as: .systemSmall) {
     DaysCounterWidget()
 } timeline: {
     SimpleEntry(date: .now, title: "🎉 Birthday", dayCount: 42, dateLine: "Until June 19")
     SimpleEntry(date: .now.addingTimeInterval(86400), title: "🎉 Birthday", dayCount: 41, dateLine: "Until June 19")
+    SimpleEntry(date: .now, title: "🎉 Birthday", dayCount: 0, dateLine: "Until August 22")
+    SimpleEntry(date: .now, title: "🍺 Last Drink", dayCount: 1000, dateLine: "Since June 19, 2023")
     SimpleEntry(date: .now, title: "Choose an event", dayCount: nil, dateLine: nil)
     SimpleEntry(date: .now, title: "Add an event", dayCount: nil, dateLine: nil)
 }
@@ -239,6 +296,8 @@ struct DaysCounterWidget: Widget {
 } timeline: {
     SimpleEntry(date: .now, title: "🎉 Birthday", dayCount: 42, dateLine: "Until June 19")
     SimpleEntry(date: .now.addingTimeInterval(86400), title: "🎉 Birthday", dayCount: 41, dateLine: "Until June 19")
+    SimpleEntry(date: .now, title: "🎉 Birthday", dayCount: 0, dateLine: "Until August 22")
+    SimpleEntry(date: .now, title: "🍺 Last Drink", dayCount: 1000, dateLine: "Since June 19, 2023")
     SimpleEntry(date: .now, title: "Choose an event", dayCount: nil, dateLine: nil)
     SimpleEntry(date: .now, title: "Add an event", dayCount: nil, dateLine: nil)
 }

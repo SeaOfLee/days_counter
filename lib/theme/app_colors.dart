@@ -33,6 +33,13 @@ class AppColors {
   /// text minimum. This near-black reads at roughly 7:1 instead.
   static const onAccent = Color(0xFF241F33);
 
+  /// A second readable weight on [accent], for the unit label beside a
+  /// milestone day count. [onAccent] measures about 6.7:1 there and this
+  /// about 5.0:1 — both clear of the 4.5:1 text minimum, which white
+  /// (2.4:1) and [textMuted] are not. Mirrored in the widget's
+  /// DaysCounterWidget.swift.
+  static const onAccentMuted = Color(0xFF3A3350);
+
   /// Form labels. [textMuted] is tuned for secondary text on card
   /// backgrounds; on the paler input fill it drops to about 3:1, so labels
   /// get their own slightly darker tone.

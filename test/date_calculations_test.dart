@@ -202,4 +202,56 @@ void main() {
       expect(dayCountLabel(1139), '1,139 days');
     });
   });
+
+  group('milestoneFor', () {
+    test('day zero is its own kind of moment', () {
+      expect(milestoneFor(0), Milestone.today);
+    });
+
+    test('recognises the early milestones', () {
+      expect(milestoneFor(7), Milestone.round);
+      expect(milestoneFor(30), Milestone.round);
+      expect(milestoneFor(100), Milestone.round);
+      expect(milestoneFor(365), Milestone.round);
+    });
+
+    test('recognises every multiple of the interval past them', () {
+      expect(milestoneFor(500), Milestone.round);
+      expect(milestoneFor(1000), Milestone.round);
+      expect(milestoneFor(1500), Milestone.round);
+      expect(milestoneFor(10000), Milestone.round);
+    });
+
+    test('ordinary days are not milestones', () {
+      expect(milestoneFor(1), isNull);
+      expect(milestoneFor(247), isNull);
+      expect(milestoneFor(1139), isNull);
+    });
+
+    test('the days either side of a milestone are not milestones', () {
+      expect(milestoneFor(6), isNull);
+      expect(milestoneFor(8), isNull);
+      expect(milestoneFor(99), isNull);
+      expect(milestoneFor(101), isNull);
+      expect(milestoneFor(364), isNull);
+      expect(milestoneFor(366), isNull);
+      expect(milestoneFor(499), isNull);
+      expect(milestoneFor(501), isNull);
+    });
+
+    test('yearly anniversaries past the first are not milestones', () {
+      // Deliberate: only 365 is fixed, and 730 is not a multiple of 500.
+      expect(milestoneFor(730), isNull);
+      expect(milestoneFor(1095), isNull);
+    });
+
+    // An `until` event whose date has passed renders a negative count until
+    // it is next saved, and -500 would otherwise satisfy the interval rule.
+    test('negative counts never match', () {
+      expect(milestoneFor(-1), isNull);
+      expect(milestoneFor(-100), isNull);
+      expect(milestoneFor(-500), isNull);
+      expect(milestoneFor(-1000), isNull);
+    });
+  });
 }
