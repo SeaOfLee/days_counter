@@ -395,7 +395,7 @@ the toggle that "In days" needed, that mode has its own **Ago / From
 now** control.
 
 **All five requested features are done.** **Phase 26 — Milestone Moments
-is in progress**, requested on 2026-08-21 and drafted into
+is done**, requested on 2026-08-21 and drafted into
 PROJECT_PLAN.md: day-zero and round-number milestone treatments on the
 widget and the in-app card, plus optional on-device local notifications.
 
@@ -414,7 +414,8 @@ reads "Today" instead of a bare `0`, and the widget swaps in
 `MascotCelebration`. `SimpleEntry` needed no new field — `dayCount == nil`
 was already the empty-state sentinel, so `0` is unambiguous.
 
-Verified on a physical iPhone on 2026-08-22.
+Verified on a physical iPhone on 2026-08-22, including the celebration
+mascot at its enlarged 96pt frame.
 
 **Widget configuration cannot be tested on the simulator.** A widget added
 there lands in "Choose an event" and stays there after an event is picked —

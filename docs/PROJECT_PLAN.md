@@ -2013,7 +2013,8 @@ at the same 150/300/450px greyscale-plus-alpha sizes and framing as
 `Mascot.imageset`. Nothing in Swift references it yet; wiring it to the
 `dayCount == 0` branch is this phase's work.
 
-**Fixed: the celebration mascot used to render too small.** The confetti
+**Fixed and confirmed on device (2026-08-22): the celebration mascot used to
+render too small.** The confetti
 spreads well outside the character, so at the walking pose's 72pt frame the
 celebration's calendar body came out visibly smaller and the character read
 as shrunken. The milestone branch now draws at 96pt. That number came from
@@ -2175,13 +2176,19 @@ render (the first visible payoff and the cheapest), then card parity, then
 notifications last, since they have the most moving parts and the longest
 feedback loop.
 
-Success criterion:
+Success criterion: **met.**
 
 An event dated today shows a distinct "today" treatment on both the Home
 Screen widget and its in-app card, reverting on its own the next day; an
 event crossing a milestone shows the milestone treatment; and an event
 with notifications enabled delivers a local notification on that day with
 no network request made by the app.
+
+All of it is confirmed: the widget's milestone rendering and the resized
+celebration mascot on a physical iPhone, the card treatment and the whole
+notification path — permission, scheduling, delivery — on the simulator.
+The one deliberate narrowing is that notifications cover a countdown's
+arrival day only, not every milestone; see 26d.
 
 Verify:
 
