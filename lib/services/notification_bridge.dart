@@ -69,18 +69,41 @@ class NotificationBridge {
   /// Replace rather than merge: the native side cancels the app's existing
   /// requests before adding these, so the caller never has to work out what
   /// changed, and a deleted or edited event can't leave an orphan behind.
-  /// Returns how many iOS actually accepted, which will not match the
-  /// number passed in if the payload fails to decode natively.
-  static Future<int> schedule(List<PendingNotification> notifications) async {
+  /// Returns how many iOS actually accepted and, if any were rejected, the
+  /// first reason why.
+  ///
+  /// `UNUserNotificationCenter.add` is asynchronous and reports failure only
+  /// through a completion handler, so the count comes from those handlers
+  /// rather than from the number of requests sent — the difference is what
+  /// tells a silent rejection from a success.
+  static Future<({int accepted, String? error})> schedule(
+    List<PendingNotification> notifications,
+  ) async {
     try {
-      return await _channel.invokeMethod<int>(
-            'schedule',
-            notifications.map((n) => n.toJson()).toList(),
-          ) ??
-          0;
+      final outcome = await _channel.invokeMapMethod<String, Object?>(
+        'schedule',
+        notifications.map((n) => n.toJson()).toList(),
+      );
+      return (
+        accepted: outcome?['accepted'] as int? ?? 0,
+        error: outcome?['error'] as String?,
+      );
     } on MissingPluginException {
       // As above — notifications are iOS-only, so there's nothing to do.
-      return 0;
+      return (accepted: 0, error: null);
+    }
+  }
+
+  /// Whether iOS will accept notifications from this app at all.
+  ///
+  /// Debug builds only. A denied or never-asked status is the first thing
+  /// to rule out when nothing schedules, and it is otherwise invisible.
+  static Future<String> debugAuthorizationStatus() async {
+    try {
+      return await _channel.invokeMethod<String>('debugAuthorizationStatus') ??
+          'unknown';
+    } on MissingPluginException {
+      return 'unavailable';
     }
   }
 }

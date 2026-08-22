@@ -72,6 +72,9 @@ private let notificationChannelName = "net.leerichardson.dayscounter/notificatio
         // what keeps a deleted or renamed event from leaving an orphan.
         center.removeAllPendingNotificationRequests()
         var added = 0
+        var firstError: String?
+        let group = DispatchGroup()
+        let lock = NSLock()
         // Cast the outer list and each element separately. Flutter's codec
         // delivers dictionaries whose keys are AnyHashable-wrapped, so the
         // tempting `as? [[String: Any]]` on the whole payload can fail as a
@@ -99,19 +102,33 @@ private let notificationChannelName = "net.leerichardson.dayscounter/notificatio
           components.hour = item["hour"] as? Int
           components.minute = item["minute"] as? Int
 
+          // add() is asynchronous and reports failure only through its
+          // completion handler. Counting loop iterations instead would count
+          // attempts and call them successes — which is exactly the lie that
+          // hid a scheduling failure once already.
+          group.enter()
           center.add(
             UNNotificationRequest(
               identifier: id,
               content: content,
               trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
             )
-          )
-          added += 1
+          ) { error in
+            lock.lock()
+            if let error {
+              if firstError == nil { firstError = error.localizedDescription }
+            } else {
+              added += 1
+            }
+            lock.unlock()
+            group.leave()
+          }
         }
-        // Returns what was actually accepted rather than nothing, so a
-        // payload that fails to decode shows up as a number that disagrees
-        // with what Flutter planned instead of failing silently.
-        result(added)
+        // Reports what iOS actually accepted, plus the first failure reason,
+        // so a rejection surfaces instead of vanishing.
+        group.notify(queue: .main) {
+          result(["accepted": added, "error": firstError as Any])
+        }
 
 #if DEBUG
       // Debug-only helpers. Milestones are days away and fire at 9am, so
@@ -141,6 +158,20 @@ private let notificationChannelName = "net.leerichardson.dayscounter/notificatio
           )
         )
         result(nil)
+
+      case "debugAuthorizationStatus":
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+          let status: String
+          switch settings.authorizationStatus {
+          case .notDetermined: status = "notDetermined — never asked"
+          case .denied: status = "denied — nothing will schedule"
+          case .authorized: status = "authorized"
+          case .provisional: status = "provisional"
+          case .ephemeral: status = "ephemeral"
+          @unknown default: status = "unknown"
+          }
+          DispatchQueue.main.async { result(status) }
+        }
 
       case "debugPendingNotifications":
         UNUserNotificationCenter.current().getPendingNotificationRequests { requests in

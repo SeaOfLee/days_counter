@@ -21,6 +21,7 @@ class DebugMenuScreen extends ConsumerStatefulWidget {
 
 class _DebugMenuScreenState extends ConsumerState<DebugMenuScreen> {
   List<String>? _pending;
+  String _authStatus = '…';
   bool _loading = false;
 
   @override
@@ -32,9 +33,11 @@ class _DebugMenuScreenState extends ConsumerState<DebugMenuScreen> {
   Future<void> _refreshPending() async {
     setState(() => _loading = true);
     final pending = await NotificationBridge.debugPendingNotifications();
+    final status = await NotificationBridge.debugAuthorizationStatus();
     if (!mounted) return;
     setState(() {
       _pending = pending;
+      _authStatus = status;
       _loading = false;
     });
   }
@@ -55,11 +58,14 @@ class _DebugMenuScreenState extends ConsumerState<DebugMenuScreen> {
   Future<void> _reschedule() async {
     final events = ref.read(eventsProvider).valueOrNull ?? const [];
     final planned = plannedNotifications(events);
-    final accepted = await NotificationBridge.schedule(planned);
+    final outcome = await NotificationBridge.schedule(planned);
     if (!mounted) return;
-    // Showing both numbers is the point: a mismatch means the payload
-    // didn't survive the platform channel.
-    _say('Planned ${planned.length}, iOS accepted $accepted.');
+    // Showing both numbers is the point: a mismatch means iOS rejected
+    // requests that Flutter thought it had handed over.
+    _say(
+      'Planned ${planned.length}, iOS accepted ${outcome.accepted}.'
+      '${outcome.error == null ? '' : ' ${outcome.error}'}',
+    );
     await _refreshPending();
   }
 
@@ -93,6 +99,12 @@ class _DebugMenuScreenState extends ConsumerState<DebugMenuScreen> {
             title: const Text('Reschedule from current events'),
             subtitle: const Text('Same call the app makes after an edit'),
             onTap: _reschedule,
+          ),
+          const Divider(height: 32),
+          ListTile(
+            leading: const Icon(Icons.verified_user_outlined),
+            title: const Text('Permission'),
+            subtitle: Text(_authStatus),
           ),
           const Divider(height: 32),
           Padding(
