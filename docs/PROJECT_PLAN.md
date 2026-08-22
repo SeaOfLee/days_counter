@@ -2095,7 +2095,16 @@ away and fire at 9am, so the path is otherwise unverifiable without moving
 the clock. Behind a bug icon shown only when `kDebugMode` is true, with the
 native handlers inside `#if DEBUG`: fire a test notification ten seconds
 out, re-run the scheduling call, and list what iOS is actually holding.
-Confirmed working on the simulator — planned 2, accepted 2.
+Confirmed end to end on the simulator: permission granted, requests
+accepted by iOS, banner delivered carrying the production copy.
+
+Two false trails cost real time here and are worth not repeating. The first
+count of "accepted" was incremented per loop iteration rather than from
+`add`'s completion handler, so it reported attempts as successes. The second
+was worse: `#if DEBUG` is false in Runner's Swift unless the target is given
+`SWIFT_ACTIVE_COMPILATION_CONDITIONS`, which Flutter's generated project
+never does — so every debug handler compiled away, and "pending shows 0"
+looked like a scheduling failure when it was a broken instrument.
 
 ### 26e — Lock screen content — **done, no setting**
 

@@ -481,6 +481,13 @@ vs accepted, and lists what iOS is actually holding. Notifications are days
 away and fire at 9am, so without it the path is unverifiable short of moving
 the clock.
 
+**End-to-end delivery is confirmed on the simulator** (2026-08-22): permission
+granted, requests accepted by iOS, banner delivered with the real copy. Note
+banners appear whenever the app is not in the *foreground* — lock state is
+irrelevant, and `FlutterAppDelegate` already implements
+`UNUserNotificationCenterDelegate`, so a foreground banner is possible too.
+Don't reassign that delegate.
+
 **Notification text is deliberately generic** — title "Dayward", body
 "Today's the day.", with the event's name and emoji left out entirely.
 Notifications render on the lock screen in front of whoever else is in the
