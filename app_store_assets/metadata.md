@@ -19,10 +19,10 @@ With a Home Screen widget
 (Changed from "Track days since & until" — that's now redundant with
 the app name above.)
 
-## Promotional Text (170 char max)
+## Promotional Text
 
-Track the days that matter — since a big moment, until the next one.
-See your count right on your Home Screen with an auto-updating widget.
+See [listing-copy.md](listing-copy.md). Kept there with the Description
+and release notes, since all three change from release to release.
 
 (Unlike the rest of this metadata, promotional text can be updated any
 time without a new version submission — worth revisiting later.)
@@ -33,20 +33,7 @@ Utilities
 
 ## Description
 
-Dayward keeps track of the days that matter to you — count down to an
-upcoming event, or count up from a meaningful date.
-
-- Add unlimited events with a title, date, and optional emoji
-- Count "since" a date (e.g. days sober, days at a new job) or "until"
-  one (e.g. days to a trip)
-- See your count at a glance from your Home Screen with a widget that
-  updates automatically
-- Give each widget its own event, and stack several to swipe between them
-- Enter a date from the calendar, or just say how many days away it is
-- Drag your events into whatever order suits you
-- Get a reminder on the morning a countdown arrives
-- Milestone days look the part — reaching one changes how the event reads
-- Everything stays on your device — no account, no tracking, no ads
+See [listing-copy.md](listing-copy.md).
 
 ## Keywords
 
@@ -110,24 +97,7 @@ implemented cryptography.
 
 No demo account needed; the app has no login/accounts.
 
-## What's New in This Version (1.2.0)
+## What's New in This Version
 
-Release notes for the version page in App Store Connect. 1.1.0 already
-shipped configurable widgets, drag-to-reorder, relative day entry and the
-dark-mode fixes, so these cover only what is new since.
-
-```text
-Milestone days now look like milestones. The day you've been counting
-down to reads "Today" instead of zero, and round-number days — 100, 365,
-1,000 — stand out on your Home Screen widget and in your list.
-
-You can also turn on a reminder for anything you're counting down to, and
-Dayward will tell you on the morning it arrives. Reminders are scheduled
-on your device and never leave it — and they don't name the event, so
-nothing private ends up on your lock screen.
-```
-
-Note on the reminder wording: the notification text really is generic
-("Dayward — Today's the day"), and the release note says so deliberately
-rather than overselling it. It's a lock-screen privacy decision, not a
-limitation to hide.
+See [listing-copy.md](listing-copy.md), which also keeps the previous
+releases' notes.

@@ -273,7 +273,10 @@ In the browser at [appstoreconnect.apple.com](https://appstoreconnect.apple.com)
 1. Open the app record, and create a new version if one doesn't already
    exist for this release (**+ Version or Platform**, e.g. `1.0.1`).
 2. Under Build, select the build you just uploaded.
-3. Fill in "What's New in This Version" release notes.
+3. Fill in "What's New in This Version" release notes. The copy for this
+   and for Promotional Text and Description lives in
+   [app_store_assets/listing-copy.md](app_store_assets/listing-copy.md),
+   ready to paste; update it for the new version first.
 4. Replace the screenshots in the 6.7" iPhone and 13" iPad slots if the
    UI changed.
 5. Answer **Export Compliance** (No — the app contains no encryption and
