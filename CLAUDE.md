@@ -544,6 +544,52 @@ This project's `pubspec.yaml` targets Dart SDK `^3.12.2`. There is no
 Android CI/build expectation — Android warnings from `flutter doctor` can
 be ignored.
 
+## Secrets and sensitive data
+
+**This repository is public on GitHub**
+(`github.com/SeaOfLee/days_counter`). Treat every commit as permanently
+world-readable. Deleting a file in a later commit does **not** remove it —
+the blob stays in history, and anyone who cloned or forked keeps it.
+
+**Never commit:**
+
+- Signing certificates or private keys — `.p12`, `.pem`, `.cer`, `.key`,
+  `.pfx`, `.certSigningRequest`
+- Provisioning profiles — `.mobileprovision`
+- App Store Connect API keys — `AuthKey_*.p8`, and the issuer/key IDs
+  that go with them
+- Apple ID passwords, app-specific passwords, or 2FA recovery codes
+- The App Review contact phone number (it belongs in App Store Connect;
+  it has deliberately never been in this repo — keep it that way)
+- `.env` files, keystores, or anything holding a token
+- Built archives or uploads — `.xcarchive`, `.ipa`, `ExportOptions.plist`
+  with embedded team/profile data
+
+**Already in the repo and fine — don't "fix" these:** the Development
+Team ID (`DEVELOPMENT_TEAM = T7WD2Y7673`), bundle identifiers, the App
+Group ID (`group.net.leerichardson.dayscounter`), and the widget-bridge
+`MethodChannel` name. All four ship inside every App Store binary and are
+public by design. They are identifiers, not credentials.
+
+Secrets belong in the macOS Keychain (certificates), in Xcode's managed
+provisioning, or typed directly into App Store Connect — never in a file
+under this directory, including a gitignored one, since a gitignore entry
+is one `git add -f` away from being bypassed.
+
+**If a credential does get committed, rotating it is the fix, not
+`git rm`.** Revoke the certificate or key and issue a new one. Rewriting
+history is optional cleanup afterwards and does nothing about clones that
+already exist.
+
+Before committing a file type this repo has not carried before, check
+what is inside it. Binary assets and Xcode-generated files are the easy
+ones to wave through without looking.
+
+History was audited on 2026-08-22 across all 55 commits — every file ever
+added, plus a content scan for private keys, cloud and platform tokens,
+`api_key`/`password`/`secret` assignments, emails, and phone numbers. It
+was clean; the only exposure is the Team ID noted above.
+
 ## Releasing
 
 **Read [README.md](README.md)'s "Releasing to the App Store" before doing
