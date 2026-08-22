@@ -467,7 +467,11 @@ colour — rasterized from
 [docs/dayward_character_flat_black.svg](docs/dayward_character_flat_black.svg),
 not from the full-colour `~/Downloads/dayward_character.png`. The colour
 original is not used anywhere in the product; it survives only as the
-thing the canonical SVG was traced from. None of the widget's
+thing the canonical SVG was traced from. A second pose was added on
+2026-08-22 for Phase 26's day-zero state — source at
+[docs/dayward_celebration_flat.svg](docs/dayward_celebration_flat.svg),
+rasterized to `MascotCelebration.imageset/` in the same format and
+framing. No Swift code references it yet. None of the widget's
 `Provider`/`getTimeline`/`dayCount(for:on:)` date-math or App Group
 bridging changed — this pass was view-layer only. The full build
 (Runner + widget extension) compiles cleanly and all 35 Flutter tests

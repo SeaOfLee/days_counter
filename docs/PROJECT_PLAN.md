@@ -1985,11 +1985,24 @@ out of process; there are no animation loops. iOS 17+ does transition
 between timeline entries automatically, so the flip in at midnight
 animates for free, but that's the whole budget.
 
-**A second mascot pose is a decision, not an inference.** The standing
-direction is one pose only, and specifically not the per-event poses in
-`docs/dayward-widget-mockups.png`. A celebration pose is a different rule
-— driven by state rather than by which event it is — but it's still a
-change to that direction, so ask before drawing one.
+**The celebration mascot pose is settled and the asset already exists.**
+The standing direction had been one pose only, and specifically not the
+per-event poses in `docs/dayward-widget-mockups.png`; a state-driven
+celebration pose was agreed as a separate rule and supplied on
+2026-08-22. Source vector is
+[docs/dayward_celebration_flat.svg](dayward_celebration_flat.svg) —
+jumping, raised fists, sparse confetti — and it is already rasterized
+into `ios/DaysCounterWidget/Assets.xcassets/MascotCelebration.imageset/`
+at the same 150/300/450px greyscale-plus-alpha sizes and framing as
+`Mascot.imageset`. Nothing in Swift references it yet; wiring it to the
+`dayCount == 0` branch is this phase's work.
+
+One sizing note for whoever does that wiring: the confetti spreads wider
+than the character, so inside the same 72pt frame the celebration pose's
+calendar body renders noticeably smaller than the walking pose's. It
+still reads at that size, but if the two look mismatched when placed side
+by side, the fix is a larger frame for the day-zero branch rather than a
+re-crop of the art.
 
 Add `#Preview`s for day zero and a milestone at both families. Previews
 render without booting a simulator and are the fastest check on the
