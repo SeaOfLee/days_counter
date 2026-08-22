@@ -84,8 +84,8 @@ class _DebugMenuScreenState extends ConsumerState<DebugMenuScreen> {
         children: [
           ListTile(
             leading: const Icon(Icons.notifications_active_outlined),
-            title: const Text('Fire a test notification'),
-            subtitle: const Text('Arrives in 10 seconds'),
+            title: const Text('Preview a reminder'),
+            subtitle: const Text('Real copy, arriving in 10 seconds'),
             onTap: _fireTest,
           ),
           ListTile(

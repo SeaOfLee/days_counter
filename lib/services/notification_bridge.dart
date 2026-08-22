@@ -29,15 +29,22 @@ class NotificationBridge {
     }
   }
 
-  /// Fires a throwaway notification a few seconds from now.
+  /// Fires a throwaway notification a few seconds from now, carrying the
+  /// same copy a real reminder would.
   ///
   /// Debug builds only — the native handler is inside `#if DEBUG` and does
-  /// not exist in release. Real milestones are days away and fire at 9am,
-  /// so this is the only way to exercise delivery without waiting or moving
-  /// the clock.
+  /// not exist in release. Real reminders are days away and fire at 9am, so
+  /// this is the only way to exercise delivery without waiting or moving the
+  /// clock. It sends the production title and body deliberately: a test that
+  /// shows placeholder text proves the plumbing works but says nothing about
+  /// how the thing actually reads on a lock screen.
   static Future<void> debugFireTestNotification({int seconds = 10}) async {
     try {
-      await _channel.invokeMethod('debugFireTestNotification', seconds);
+      await _channel.invokeMethod('debugFireTestNotification', {
+        'seconds': seconds,
+        'title': notificationTitle,
+        'body': notificationBody,
+      });
     } on MissingPluginException {
       // Not iOS, or a release build.
     }

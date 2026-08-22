@@ -118,10 +118,14 @@ private let notificationChannelName = "net.leerichardson.dayscounter/notificatio
       // without these the delivery path can't be exercised without waiting
       // or moving the clock. Compiled out of release entirely.
       case "debugFireTestNotification":
-        let seconds = call.arguments as? Int ?? 10
+        let args = call.arguments as? [AnyHashable: Any] ?? [:]
+        let seconds = args["seconds"] as? Int ?? 10
         let content = UNMutableNotificationContent()
-        content.title = "Dayward test"
-        content.body = "Notifications are working."
+        // Flutter passes the real copy, so this previews exactly what a
+        // user will see rather than placeholder text that proves only that
+        // the plumbing works.
+        content.title = args["title"] as? String ?? "Dayward"
+        content.body = args["body"] as? String ?? "Today's the day."
         content.sound = .default
         // An interval trigger, which the real scheduling path deliberately
         // avoids: over ten seconds there is no DST or time-zone drift to
