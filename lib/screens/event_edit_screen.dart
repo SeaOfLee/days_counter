@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/date_event.dart';
+import '../services/notification_bridge.dart';
 import '../utils/date_calculations.dart';
 
 /// Returned by [EventEditScreen] when the user deletes the event being
@@ -42,6 +43,7 @@ class _EventEditScreenState extends State<EventEditScreen> {
   _DateEntry _dateEntry = _DateEntry.onDate;
   _OffsetDirection _offsetDirection = _OffsetDirection.fromNow;
   bool _dateError = false;
+  late bool _notify = widget.event?.notify ?? false;
 
   bool get _isEditing => widget.event != null;
 
@@ -112,8 +114,31 @@ class _EventEditScreenState extends State<EventEditScreen> {
       date: _date!,
       direction: _inferDirection(_date!),
       emoji: emoji.isEmpty ? null : emoji,
+      notify: _notify,
     );
     Navigator.pop(context, event);
+  }
+
+  /// Asks for permission the first time this is switched on, rather than at
+  /// launch — a prompt before the user has asked for anything is the fastest
+  /// route to a permanent denial. A refusal leaves the switch off, so the
+  /// control never claims something iOS won't do.
+  Future<void> _setNotify(bool value) async {
+    if (!value) {
+      setState(() => _notify = false);
+      return;
+    }
+
+    final granted = await NotificationBridge.requestPermission();
+    if (!mounted) return;
+    setState(() => _notify = granted);
+    if (!granted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Turn on notifications for Dayward in Settings.'),
+        ),
+      );
+    }
   }
 
   void _delete() {
@@ -238,6 +263,16 @@ class _EventEditScreenState extends State<EventEditScreen> {
             TextFormField(
               controller: _emojiController,
               decoration: const InputDecoration(labelText: 'Icon (optional)'),
+            ),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              value: _notify,
+              onChanged: _setNotify,
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Remind me'),
+              subtitle: const Text(
+                'A notification on milestone days, at 9am.',
+              ),
             ),
           ],
         ),

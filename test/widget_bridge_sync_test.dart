@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fakes/in_memory_event_repository.dart';
+import 'fakes/notification_bridge_mock.dart';
 import 'fakes/widget_bridge_mock.dart';
 
 /// The App Group payload is this phase's whole contract with the widget, and
@@ -15,6 +16,7 @@ void main() {
   setUp(() {
     TestWidgetsFlutterBinding.ensureInitialized();
     bridge = RecordingWidgetBridge()..install();
+    mockNotificationChannel();
   });
 
   ProviderContainer containerWith(InMemoryEventRepository repository) {
@@ -69,17 +71,20 @@ void main() {
     expect(bridge.lastCall.arguments, '[]');
   });
 
+  // Asserts the widget's fields specifically rather than the whole map:
+  // the payload is the model's own JSON, so an exact comparison fails every
+  // time the model gains a field the widget doesn't read. What matters is
+  // that WidgetEvent's five keys are present and correct.
   test('payload carries the fields the widget decodes', () async {
     final container = containerWith(InMemoryEventRepository());
 
     await container.read(eventsProvider.future);
 
-    expect(bridge.lastEvents.first, {
-      'id': '1',
-      'title': 'Last Drink',
-      'date': '2023-06-19',
-      'direction': 'since',
-      'emoji': '🍺',
-    });
+    final payload = bridge.lastEvents.first;
+    expect(payload['id'], '1');
+    expect(payload['title'], 'Last Drink');
+    expect(payload['date'], '2023-06-19');
+    expect(payload['direction'], 'since');
+    expect(payload['emoji'], '🍺');
   });
 }

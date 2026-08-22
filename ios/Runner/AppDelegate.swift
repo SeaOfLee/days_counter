@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import UserNotifications
 import WidgetKit
 
 // Keep these in sync with the matching constants in DaysCounterWidget.swift —
@@ -11,6 +12,11 @@ private let widgetEventsKey = "eventsPayload"
 // per-instance configuration. Cleared on write so upgraded installs don't
 // keep a dead single-event blob around. Safe to delete after a release.
 private let retiredFeaturedEventKey = "featuredEventPayload"
+
+// Local notifications only — scheduled on-device by UNUserNotificationCenter,
+// with no server, no APNs and no push entitlement. Flutter decides what to
+// schedule and how it reads; this side only hands the requests to iOS.
+private let notificationChannelName = "net.leerichardson.dayscounter/notifications"
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -40,6 +46,63 @@ private let retiredFeaturedEventKey = "featuredEventPayload"
           WidgetCenter.shared.reloadAllTimelines()
         }
         result(nil)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+
+    let notifications = FlutterMethodChannel(
+      name: notificationChannelName,
+      binaryMessenger: engineBridge.applicationRegistrar.messenger()
+    )
+    notifications.setMethodCallHandler { call, result in
+      switch call.method {
+      case "requestPermission":
+        UNUserNotificationCenter.current()
+          .requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            // Hop back to the main thread: the completion handler runs on an
+            // arbitrary queue, and Flutter results must be sent from the
+            // platform thread.
+            DispatchQueue.main.async { result(granted) }
+          }
+
+      case "schedule":
+        let center = UNUserNotificationCenter.current()
+        // Flutter always sends the complete set, so replacing wholesale is
+        // what keeps a deleted or renamed event from leaving an orphan.
+        center.removeAllPendingNotificationRequests()
+        for item in call.arguments as? [[String: Any]] ?? [] {
+          guard
+            let id = item["id"] as? String,
+            let title = item["title"] as? String,
+            let body = item["body"] as? String
+          else { continue }
+
+          let content = UNMutableNotificationContent()
+          content.title = title
+          content.body = body
+          content.sound = .default
+
+          // Calendar components, never a time interval: an interval trigger
+          // adds fixed 24-hour blocks and drifts across a DST boundary, and
+          // this one follows the user across time zones.
+          var components = DateComponents()
+          components.year = item["year"] as? Int
+          components.month = item["month"] as? Int
+          components.day = item["day"] as? Int
+          components.hour = item["hour"] as? Int
+          components.minute = item["minute"] as? Int
+
+          center.add(
+            UNNotificationRequest(
+              identifier: id,
+              content: content,
+              trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+            )
+          )
+        }
+        result(nil)
+
       default:
         result(FlutterMethodNotImplemented)
       }

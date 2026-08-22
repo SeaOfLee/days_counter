@@ -6,10 +6,14 @@ import 'package:days_counter/app.dart';
 import 'package:days_counter/providers/events_provider.dart';
 
 import 'fakes/in_memory_event_repository.dart';
+import 'fakes/notification_bridge_mock.dart';
 import 'fakes/widget_bridge_mock.dart';
 
 void main() {
-  setUp(mockWidgetBridgeChannel);
+  setUp(() {
+    mockWidgetBridgeChannel();
+    mockNotificationChannel();
+  });
 
   testWidgets('shows every in-memory event', (WidgetTester tester) async {
     await tester.pumpWidget(

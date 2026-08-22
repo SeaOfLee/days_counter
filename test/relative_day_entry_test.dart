@@ -7,10 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fakes/in_memory_event_repository.dart';
+import 'fakes/notification_bridge_mock.dart';
 import 'fakes/widget_bridge_mock.dart';
 
 void main() {
-  setUp(mockWidgetBridgeChannel);
+  setUp(() {
+    mockWidgetBridgeChannel();
+    mockNotificationChannel();
+  });
 
   Future<InMemoryEventRepository> pumpApp(WidgetTester tester) async {
     final repository = InMemoryEventRepository(seed: []);

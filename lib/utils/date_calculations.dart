@@ -71,6 +71,58 @@ Milestone? milestoneFor(int days) {
   return days % _milestoneInterval == 0 ? Milestone.round : null;
 }
 
+/// The next milestone day counts a running count will reach, soonest first.
+///
+/// [countingDown] distinguishes the two directions of travel. A `since`
+/// event's count rises, so its next milestones are the values above the
+/// current one; an `until` event's count falls toward zero, so its next
+/// milestones are the values below — 30 days before a holiday is as real a
+/// moment as 30 days after a quit date — ending at arrival day itself.
+///
+/// [limit] is deliberately small. iOS allows an app only 64 pending local
+/// notifications in total, so scheduling every future milestone for every
+/// event would exhaust the budget; the next couple per event is enough,
+/// because the app reschedules whenever it is opened or an event changes.
+List<int> upcomingMilestoneCounts(
+  int currentDays, {
+  required bool countingDown,
+  int limit = 2,
+}) {
+  final candidates = <int>{};
+
+  if (countingDown) {
+    if (currentDays <= 0) return const [];
+    candidates.add(0);
+    candidates.addAll(_earlyMilestones.where((m) => m < currentDays));
+    for (var n = currentDays - (currentDays % _milestoneInterval);
+        n >= _milestoneInterval;
+        n -= _milestoneInterval) {
+      if (n < currentDays) candidates.add(n);
+    }
+    final sorted = candidates.toList()..sort((a, b) => b.compareTo(a));
+    return sorted.take(limit).toList();
+  }
+
+  if (currentDays < 0) return const [];
+  candidates.addAll(_earlyMilestones.where((m) => m > currentDays));
+  var next = currentDays - (currentDays % _milestoneInterval) + _milestoneInterval;
+  for (var i = 0; i < limit; i++, next += _milestoneInterval) {
+    candidates.add(next);
+  }
+  final sorted = candidates.toList()..sort();
+  return sorted.take(limit).toList();
+}
+
+/// The calendar date on which a count reaches [days].
+///
+/// A rising count reaches [days] that many days after the event; a falling
+/// one reaches it that many days before. Overflows the day field for the
+/// same DST reason as [dateOffsetBy].
+DateTime dateOfMilestone(DateTime eventDate, int days, {required bool countingDown}) {
+  final offset = countingDown ? -days : days;
+  return DateTime(eventDate.year, eventDate.month, eventDate.day + offset);
+}
+
 String dayCountLabel(int days) {
   final formatted = formatDayCount(days);
   return days == 1 ? '$formatted day' : '$formatted days';

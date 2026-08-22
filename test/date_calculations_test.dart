@@ -254,4 +254,90 @@ void main() {
       expect(milestoneFor(-1000), isNull);
     });
   });
+
+  group('upcomingMilestoneCounts counting up', () {
+    List<int> up(int days, {int limit = 2}) =>
+        upcomingMilestoneCounts(days, countingDown: false, limit: limit);
+
+    test('picks the early milestones first', () {
+      expect(up(0), [7, 30]);
+      expect(up(8), [30, 100]);
+      expect(up(101), [365, 500]);
+    });
+
+    test('falls back to the interval past the early ones', () {
+      expect(up(500), [1000, 1500]);
+      expect(up(1139), [1500, 2000]);
+    });
+
+    test('a day that is itself a milestone looks past it', () {
+      expect(up(365), [500, 1000]);
+    });
+
+    test('honours the limit', () {
+      expect(up(0, limit: 1), [7]);
+      expect(up(0, limit: 4), [7, 30, 100, 365]);
+    });
+  });
+
+  group('upcomingMilestoneCounts counting down', () {
+    List<int> down(int days, {int limit = 2}) =>
+        upcomingMilestoneCounts(days, countingDown: true, limit: limit);
+
+    test('counts down toward arrival', () {
+      expect(down(45), [30, 7]);
+      expect(down(8), [7, 0]);
+    });
+
+    test('arrival day is always the last one', () {
+      expect(down(5), [0]);
+      expect(down(1), [0]);
+    });
+
+    test('uses the interval while the count is large', () {
+      expect(down(1200), [1000, 500]);
+    });
+
+    test('nothing left once the date has arrived or passed', () {
+      expect(down(0), isEmpty);
+      expect(down(-5), isEmpty);
+    });
+  });
+
+  group('dateOfMilestone', () {
+    test('a rising count reaches N days after the event', () {
+      expect(
+        dateOfMilestone(DateTime(2023, 6, 19), 100, countingDown: false),
+        DateTime(2023, 9, 27),
+      );
+    });
+
+    test('a falling count reaches N days before the event', () {
+      expect(
+        dateOfMilestone(DateTime(2026, 9, 1), 30, countingDown: true),
+        DateTime(2026, 8, 2),
+      );
+    });
+
+    test('arrival day is the event date itself', () {
+      expect(
+        dateOfMilestone(DateTime(2026, 9, 1), 0, countingDown: true),
+        DateTime(2026, 9, 1),
+      );
+    });
+
+    test('crosses a DST boundary without drifting', () {
+      // US DST starts 2026-03-08; a Duration would land an hour off.
+      final result = dateOfMilestone(DateTime(2026, 3, 1), 14, countingDown: false);
+      expect(result, DateTime(2026, 3, 15));
+      expect(result.hour, 0);
+    });
+
+    test('rolls over a year boundary', () {
+      expect(
+        dateOfMilestone(DateTime(2025, 12, 20), 30, countingDown: false),
+        DateTime(2026, 1, 19),
+      );
+    });
+  });
 }
