@@ -29,6 +29,34 @@ class NotificationBridge {
     }
   }
 
+  /// Fires a throwaway notification a few seconds from now.
+  ///
+  /// Debug builds only — the native handler is inside `#if DEBUG` and does
+  /// not exist in release. Real milestones are days away and fire at 9am,
+  /// so this is the only way to exercise delivery without waiting or moving
+  /// the clock.
+  static Future<void> debugFireTestNotification({int seconds = 10}) async {
+    try {
+      await _channel.invokeMethod('debugFireTestNotification', seconds);
+    } on MissingPluginException {
+      // Not iOS, or a release build.
+    }
+  }
+
+  /// Everything iOS currently holds for this app, one line each.
+  ///
+  /// Debug builds only. This is what makes scheduling verifiable without
+  /// waiting for a fire date to arrive.
+  static Future<List<String>> debugPendingNotifications() async {
+    try {
+      final pending =
+          await _channel.invokeMethod<List<Object?>>('debugPendingNotifications');
+      return pending?.cast<String>() ?? const [];
+    } on MissingPluginException {
+      return const [];
+    }
+  }
+
   /// Replaces every pending request this app has scheduled.
   ///
   /// Replace rather than merge: the native side cancels the app's existing

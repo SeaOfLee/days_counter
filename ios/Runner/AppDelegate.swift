@@ -103,6 +103,43 @@ private let notificationChannelName = "net.leerichardson.dayscounter/notificatio
         }
         result(nil)
 
+#if DEBUG
+      // Debug-only helpers. Milestones are days away and fire at 9am, so
+      // without these the delivery path can't be exercised without waiting
+      // or moving the clock. Compiled out of release entirely.
+      case "debugFireTestNotification":
+        let seconds = call.arguments as? Int ?? 10
+        let content = UNMutableNotificationContent()
+        content.title = "Dayward test"
+        content.body = "Notifications are working."
+        content.sound = .default
+        // An interval trigger, which the real scheduling path deliberately
+        // avoids: over ten seconds there is no DST or time-zone drift to
+        // worry about, and "fire N seconds from now" is exactly what this
+        // needs.
+        UNUserNotificationCenter.current().add(
+          UNNotificationRequest(
+            identifier: "debug-test",
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(
+              timeInterval: TimeInterval(seconds), repeats: false
+            )
+          )
+        )
+        result(nil)
+
+      case "debugPendingNotifications":
+        UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
+          let described = requests.map { request -> String in
+            let when = (request.trigger as? UNCalendarNotificationTrigger)?
+              .nextTriggerDate()
+              .map(ISO8601DateFormatter().string(from:)) ?? "n/a"
+            return "\(request.identifier)  \(when)  \(request.content.body)"
+          }
+          DispatchQueue.main.async { result(described.sorted()) }
+        }
+#endif
+
       default:
         result(FlutterMethodNotImplemented)
       }

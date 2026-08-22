@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -5,6 +6,7 @@ import '../models/date_event.dart';
 import '../providers/events_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/event_card.dart';
+import 'debug_menu_screen.dart';
 import 'event_edit_screen.dart';
 
 class EventListScreen extends ConsumerWidget {
@@ -56,7 +58,24 @@ class EventListScreen extends ConsumerWidget {
     return Scaffold(
       // No widget-picker action here any more: each Home Screen widget
       // chooses its own event via long press -> Edit Widget.
-      appBar: AppBar(title: const Text('Dayward')),
+      appBar: AppBar(
+        title: const Text('Dayward'),
+        actions: [
+          // kDebugMode is a const, so this branch and the screen behind it
+          // are tree-shaken out of release builds.
+          if (kDebugMode)
+            IconButton(
+              icon: const Icon(Icons.bug_report_outlined),
+              tooltip: 'Debug',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const DebugMenuScreen(),
+                ),
+              ),
+            ),
+        ],
+      ),
       body: eventsAsync.when(
         data: (events) => events.isEmpty
             ? const _EmptyState()
