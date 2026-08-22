@@ -715,9 +715,15 @@ a mismatch trips `ITMS-90473` on upload; verify shipped versions from the
 built bundles, not the project file; and confirm the export is signed
 *Apple Distribution*, not *Apple Development*.
 
-Current release state: the App Store has **1.0.1 (build 3)**. Everything
-from the five post-1.0.1 features (Phases 21, 23, 24, 25) is unreleased,
-so the next submission needs a version bump.
+Current release state: the App Store has **1.1.0**, which shipped Phases
+21, 23, 24 and 25 — configurable widgets, the dark-mode readability fixes,
+drag-to-reorder and relative day entry. The repo is at **1.2.0 (5)**,
+prepared but not yet submitted, carrying Phase 26: milestone days on the
+widget and the event card, and arrival-day reminders.
+
+Both `pubspec.yaml` and the widget extension's three configs are at 1.2.0
+(5) and were verified from the built bundles rather than the project file.
+Bump both together next time — a mismatch trips `ITMS-90473` on upload.
 
 ## Testing expectations
 

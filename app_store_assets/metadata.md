@@ -110,29 +110,24 @@ implemented cryptography.
 
 No demo account needed; the app has no login/accounts.
 
-## What's New in This Version (1.1.0)
+## What's New in This Version (1.2.0)
 
-Release notes for the version page in App Store Connect. Written for
-someone who already has 1.0.1 installed.
+Release notes for the version page in App Store Connect. 1.1.0 already
+shipped configurable widgets, drag-to-reorder, relative day entry and the
+dark-mode fixes, so these cover only what is new since.
 
 ```text
-Widgets can now be set to different events, so you can stack a few and
-swipe between them.
+Milestone days now look like milestones. The day you've been counting
+down to reads "Today" instead of zero, and round-number days — 100, 365,
+1,000 — stand out on your Home Screen widget and in your list.
 
-Reaching a milestone looks like it. A day you've been counting down to
-now reads "Today", and round-number days stand out on the widget and in
-your list.
-
-Turn on a reminder and Dayward will tell you the morning a countdown
-arrives. Reminders are scheduled on your device and say nothing about
-which event they're for.
-
-Also: enter a date as "in 30 days" instead of picking it off a calendar,
-drag events into the order you want, and the New Event screen is much
-easier to read in dark mode.
+You can also turn on a reminder for anything you're counting down to, and
+Dayward will tell you on the morning it arrives. Reminders are scheduled
+on your device and never leave it — and they don't name the event, so
+nothing private ends up on your lock screen.
 ```
 
-Note on the reminder wording above: the notification text really is
-generic ("Dayward — Today's the day"), and the release note says so
-deliberately rather than overselling it. It's a lock-screen privacy
-decision, not a limitation to hide.
+Note on the reminder wording: the notification text really is generic
+("Dayward — Today's the day"), and the release note says so deliberately
+rather than overselling it. It's a lock-screen privacy decision, not a
+limitation to hide.
