@@ -146,6 +146,81 @@ When I request new artwork, first interpret the requested product meaning, then 
 
 **Canonical reference:** `dayward_character_flat_black.svg`
 
+## Producing the SVG Deliverable
+
+Everything above governs *what to draw*. This section governs *how to turn an
+approved pose into the shipped file*. The pipeline has two stages, and they
+are usually two different tools: generate or commission the pose as a raster
+image, then trace that image into vector. Do not skip the first stage and draw
+from the written description — a pose invented from prose is a reinterpretation
+of the character, not the character.
+
+### What to attach
+
+1. **A PNG showing the exact pose and composition wanted.** This is the source
+   of truth for pose, proportions, expression, limbs, gloves, shoes, calendar
+   binding, and any confetti or motion marks.
+2. **The canonical Dayward mascot SVG**, as a style and construction reference —
+   confirmation of how the existing mascot is represented as flat monochrome
+   vector artwork.
+
+If either reference file is unavailable, **stop and ask for it to be attached
+again.** Do not deliver an approximation based only on this brief.
+
+### Process
+
+1. Inspect both files before creating anything.
+2. Confirm the PNG's dimensions, transparency, and artwork bounds.
+3. Crop away unnecessary transparent margins without cutting off any artwork.
+4. Flatten the PNG onto white solely for tracing.
+5. Convert to greyscale and apply a threshold that retains the clean black
+   outlines and details while removing grey shading, antialiasing artifacts,
+   texture, and shadows.
+6. Explicitly remove the ground shadow beneath the mascot.
+7. Trace the processed black-and-white image into genuine SVG paths using
+   Potrace or an equivalent vector tracer.
+8. Preserve white areas as transparent negative space. The output must contain
+   only one artwork colour: solid black.
+9. Keep the calendar page free of dates, numbers, words, and grids, per the
+   Mascot section above. The character's facial features are allowed.
+10. Retain everything the source artwork shows — the pose itself, rubber-hose
+    limbs, gloves, shoes, spiral binding, facial expression, and any sparse
+    confetti or motion marks. Confetti and motion marks are wanted when the
+    approved pose has them and they carry the meaning (celebration, movement);
+    they are not licence to add decoration the source doesn't have.
+11. Do not redraw or reinterpret the mascot from the written description. The
+    attached pose image must be traced faithfully.
+12. Do not embed the PNG inside an SVG container.
+
+### The finished SVG must have
+
+- Real vector paths
+- A transparent background
+- Solid black artwork
+- No gradients, shadows, glow, filters, masks, texture, or embedded raster
+- No unnecessary background rectangle
+- A tight, accurate `viewBox`
+- Preserved aspect ratio
+- A descriptive `<title>` and `<desc>` for accessibility
+
+### Before delivering
+
+1. Validate the SVG as well-formed XML.
+2. Render it on a white background for visual inspection.
+3. Compare the render against the supplied PNG and verify that the silhouette,
+   face, hands, feet, binding, and pose match.
+4. Search the SVG for `<image>`, gradients, filters, masks, and patterns to
+   confirm none are present.
+5. If the preview is blank or solid black, correct the transparency-flattening
+   step and render again.
+6. Deliver the finished `.svg` and show a preview.
+
+**"Real vector paths" means not an embedded raster — it does not mean
+riggable.** A trace produces welded outline paths, which is the right delivery
+format: each pose is a finished picture, scalable and recolourable, rather than
+a skeleton to be re-posed. That is how the canonical SVG itself is built. Every
+new pose is traced independently from its own source image.
+
 ---
 
 ## Repo notes
@@ -166,25 +241,40 @@ proposing a change to it, and new artwork drawn to this brief will sit
 alongside it consistently. The colour original is not used anywhere in the
 product.
 
-**Treat the canonical SVG as a picture, not as editable geometry.** It is
+**The canonical SVG is itself a trace, and that is the intended format.** It is
 `potrace` output: six paths, one of which welds 26 subpaths together, with no
-groups, no ids, and a single `fill="#000000"`. It is exactly right as the
-visual source of truth — flat, one colour, correct proportions and line
-weight — but there is nothing inside it to pose. Attempting to reposition a
-limb by editing its path data does not work.
+groups, no ids, and a single `fill="#000000"`. That is exactly what the
+procedure above produces, and it is right for the job — a finished picture per
+pose, flat, one colour, correct proportions and line weight, scalable and
+recolourable.
+
+What it is *not* is a rig. There is nothing inside it to pose: repositioning a
+limb by editing path data does not work, because a limb is not a separate
+object. Each new pose is traced independently from its own source image rather
+than derived from this one.
 
 **Reconstructing the character from primitives was tried and rejected**
-(2026-08-21). A hand-authored SVG rebuild produced a recognisable but clearly
-inferior character — flat line weight throughout, simplified gloves and shoes,
-and none of the original's warmth. If a new pose is needed, commission it or
-generate it against this brief rather than rebuilding the character in code.
+(2026-08-21). A hand-authored SVG rebuild — named groups, limbs as stroked
+paths, poses as coordinate edits — produced a recognisable but clearly inferior
+character: flat line weight throughout, simplified gloves and shoes, and none
+of the original's warmth. The trace-per-pose pipeline above replaced it. Do not
+revisit rebuilding the character in code.
 
-**Rendering SVG on this machine needs headless Chrome.** ImageMagick's SVG
-delegate shells out to `rsvg-convert`, which is not installed, so Magick
+**Tooling on this machine.** `potrace` and ImageMagick (`magick`) are both
+installed via Homebrew, covering the crop, threshold, and trace steps.
+
+Rendering the result for inspection needs **headless Chrome** — ImageMagick's
+SVG delegate shells out to `rsvg-convert`, which is *not* installed, so Magick
 silently falls back to a renderer that mangles clip paths. Chrome also needs an
 HTML wrapper that sizes the image: the canonical SVG declares its dimensions in
 points, so screenshotting the file directly renders it at 1365px and crops.
 `brew install librsvg` is the alternative.
+
+**On delivery inside this repo.** The procedure's last step says to deliver the
+file and show a preview. Here that means writing the `.svg` into the repo and
+rendering a PNG next to it for inspection — an agent working in this repository
+cannot hand over a download, and neither can a published artifact, where the
+viewer sandbox blocks page-initiated downloads.
 
 **Where the mascot is allowed to appear.** As of the post-V1 design pass the
 mascot appears only on the iOS widget, never inside the Flutter app — an
