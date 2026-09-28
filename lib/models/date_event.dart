@@ -1,7 +1,4 @@
-enum CountDirection {
-  since,
-  until,
-}
+enum CountDirection { since, until }
 
 class DateEvent {
   final String id;
@@ -10,9 +7,17 @@ class DateEvent {
   final CountDirection direction;
   final String? emoji;
 
-  /// Whether this event asks for a local notification on its milestone
-  /// days. Opt-in per event: most events don't warrant one.
+  /// Whether this event asks for local notifications at all. Opt-in per
+  /// event: most events don't warrant one. What it announces depends on
+  /// direction — a countdown's arrival, or a count-up's milestones.
   final bool notify;
+
+  /// Time of day notifications fire, as minutes after local midnight.
+  final int notifyMinuteOfDay;
+
+  /// For a countdown, how many days ahead of the date to remind: 0 is the
+  /// day itself. Ignored for a count-up, whose days are its milestones.
+  final List<int> notifyDaysBefore;
 
   DateEvent({
     required this.id,
@@ -21,7 +26,13 @@ class DateEvent {
     required this.direction,
     this.emoji,
     this.notify = false,
+    this.notifyMinuteOfDay = defaultNotifyMinuteOfDay,
+    this.notifyDaysBefore = const [0],
   });
+
+  /// 9am. Midnight is when the count technically changes, but a
+  /// notification at midnight is one nobody wanted.
+  static const defaultNotifyMinuteOfDay = 9 * 60;
 
   Map<String, dynamic> toJson() {
     return {
@@ -31,6 +42,8 @@ class DateEvent {
       'direction': direction.name,
       'emoji': emoji,
       'notify': notify,
+      'notifyMinuteOfDay': notifyMinuteOfDay,
+      'notifyDaysBefore': notifyDaysBefore,
     };
   }
 
@@ -44,6 +57,13 @@ class DateEvent {
       // Absent in files written before Phase 26; those events simply
       // haven't opted in.
       notify: json['notify'] as bool? ?? false,
+      // Both absent in files written before Phase 27; the defaults are
+      // exactly what those events were already getting.
+      notifyMinuteOfDay:
+          json['notifyMinuteOfDay'] as int? ?? defaultNotifyMinuteOfDay,
+      notifyDaysBefore:
+          (json['notifyDaysBefore'] as List<dynamic>?)?.cast<int>() ??
+          const [0],
     );
   }
 

@@ -131,7 +131,7 @@ private let notificationChannelName = "net.leerichardson.dayscounter/notificatio
         }
 
 #if DEBUG
-      // Debug-only helpers. Milestones are days away and fire at 9am, so
+      // Debug-only helpers. Milestones are days away, so
       // without these the delivery path can't be exercised without waiting
       // or moving the clock. Compiled out of release entirely.
       case "debugFireTestNotification":

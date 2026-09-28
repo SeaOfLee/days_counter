@@ -7,7 +7,7 @@ import '../services/notification_schedule.dart';
 
 /// Developer tools, reachable only from a debug build.
 ///
-/// Milestone notifications are days away and fire at 9am, so without a way
+/// Milestone notifications are days away, so without a way
 /// to look at what iOS is actually holding — and to provoke a delivery on
 /// demand — the whole path is unverifiable short of moving the device clock.
 /// The native handlers behind these live inside `#if DEBUG` and are not

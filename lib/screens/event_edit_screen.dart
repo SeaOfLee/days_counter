@@ -45,6 +45,11 @@ class _EventEditScreenState extends State<EventEditScreen> {
   _OffsetDirection _offsetDirection = _OffsetDirection.fromNow;
   bool _dateError = false;
   late bool _notify = widget.event?.notify ?? false;
+  late int _notifyMinuteOfDay =
+      widget.event?.notifyMinuteOfDay ?? DateEvent.defaultNotifyMinuteOfDay;
+  late final Set<int> _notifyDaysBefore = {
+    ...(widget.event?.notifyDaysBefore ?? const [0]),
+  };
 
   bool get _isEditing => widget.event != null;
 
@@ -109,16 +114,21 @@ class _EventEditScreenState extends State<EventEditScreen> {
     }
 
     final emoji = _emojiController.text.trim();
+    final direction = _inferDirection(_date!);
+    final daysBefore = _notifyDaysBefore.toList()..sort();
     final event = DateEvent(
       id: widget.event?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
       title: _titleController.text.trim(),
       date: _date!,
-      direction: _inferDirection(_date!),
+      direction: direction,
       emoji: emoji.isEmpty ? null : emoji,
-      // Clear the flag if the date moved into the past while the switch was
-      // on: the toggle is hidden by then, so leaving it set would be a
-      // preference the user can no longer see or change.
-      notify: _notify && canNotifyFor(_date!),
+      // A countdown with every reminder chip cleared has nothing to send,
+      // so it saves as switched off rather than as an empty promise.
+      notify:
+          _notify &&
+          (direction == CountDirection.since || daysBefore.isNotEmpty),
+      notifyMinuteOfDay: _notifyMinuteOfDay,
+      notifyDaysBefore: daysBefore,
     );
     Navigator.pop(context, event);
   }
@@ -143,6 +153,30 @@ class _EventEditScreenState extends State<EventEditScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _pickNotifyTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _timeOfDay,
+    );
+    if (picked != null) {
+      setState(() => _notifyMinuteOfDay = picked.hour * 60 + picked.minute);
+    }
+  }
+
+  TimeOfDay get _timeOfDay => TimeOfDay(
+    hour: _notifyMinuteOfDay ~/ 60,
+    minute: _notifyMinuteOfDay % 60,
+  );
+
+  static String _leadLabel(int daysBefore) {
+    return switch (daysBefore) {
+      0 => 'On the day',
+      1 => '1 day before',
+      7 => '1 week before',
+      _ => '${dayCountLabel(daysBefore)} before',
+    };
   }
 
   void _delete() {
@@ -268,31 +302,77 @@ class _EventEditScreenState extends State<EventEditScreen> {
               controller: _emojiController,
               decoration: const InputDecoration(labelText: 'Icon (optional)'),
             ),
-            // Only a future date has an arrival to announce, so the
-            // control simply isn't offered for anything else.
-            if (_date != null && canNotifyFor(_date!)) ...[
+            if (_date != null) ...[
               const SizedBox(height: 16),
-              // Takes the fill and radius the text fields get from
-              // inputDecorationTheme, so the switch reads as another row of
-              // the same form rather than something dropped beside it.
-              // Set on the tile itself rather than wrapped in a coloured
-              // box: ListTile paints its own background, and listTileTheme
-              // supplies a card tone here that would otherwise cover it.
-              SwitchListTile(
-                value: _notify,
-                onChanged: _setNotify,
-                tileColor: Theme.of(context).inputDecorationTheme.fillColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                title: const Text('Remind me on the day'),
-                subtitle: const Text('At 9am'),
-              ),
+              ..._reminderControls(context),
             ],
           ],
         ),
       ),
     );
+  }
+
+  /// The switch, and once it's on, when and (for a countdown) how far ahead.
+  /// What the switch means follows the date: a future date announces its
+  /// arrival, anything else its milestones — the same inference [_save]
+  /// makes, so the controls always describe what will be saved.
+  List<Widget> _reminderControls(BuildContext context) {
+    final countdown = _inferDirection(_date!) == CountDirection.until;
+    final fill = Theme.of(context).inputDecorationTheme.fillColor;
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    );
+    const padding = EdgeInsets.symmetric(horizontal: 16);
+
+    return [
+      // Takes the fill and radius the text fields get from
+      // inputDecorationTheme, so the switch reads as another row of the
+      // same form rather than something dropped beside it. Set on the tile
+      // itself rather than wrapped in a coloured box: ListTile paints its
+      // own background, and listTileTheme supplies a card tone here that
+      // would otherwise cover it.
+      SwitchListTile(
+        value: _notify,
+        onChanged: _setNotify,
+        tileColor: fill,
+        shape: shape,
+        contentPadding: padding,
+        title: const Text('Remind me'),
+        subtitle: Text(
+          countdown
+              ? 'Before the day arrives'
+              : 'At 30, 60, then every 100 days',
+        ),
+      ),
+      if (_notify) ...[
+        const SizedBox(height: 8),
+        ListTile(
+          tileColor: fill,
+          shape: shape,
+          contentPadding: padding,
+          title: const Text('Time'),
+          trailing: Text(_timeOfDay.format(context)),
+          onTap: _pickNotifyTime,
+        ),
+        if (countdown) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: [
+              for (final days in reminderLeadDays)
+                FilterChip(
+                  label: Text(_leadLabel(days)),
+                  selected: _notifyDaysBefore.contains(days),
+                  onSelected: (selected) => setState(() {
+                    selected
+                        ? _notifyDaysBefore.add(days)
+                        : _notifyDaysBefore.remove(days);
+                  }),
+                ),
+            ],
+          ),
+        ],
+      ],
+    ];
   }
 }

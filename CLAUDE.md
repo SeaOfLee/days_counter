@@ -436,7 +436,8 @@ relaunching drives the real code path — `EventsNotifier.build()` reads it,
 syncs to the App Group, and reloads timelines — so no tapping through the
 editor is needed to set up test data.
 
-**Local notifications are done, deliberately narrow.** One rule: an event
+**Local notifications shipped in Phase 26, deliberately narrow, and were
+widened in Phase 27 (below).** Phase 26's one rule: an event
 counting down to a future date announces itself at 9am on the day, via a
 hand-rolled `MethodChannel`
 (`net.leerichardson.dayscounter/notifications`) whose handler is in
@@ -489,14 +490,34 @@ irrelevant, and `FlutterAppDelegate` already implements
 `UNUserNotificationCenterDelegate`, so a foreground banner is possible too.
 Don't reassign that delegate.
 
-**Notification text is deliberately generic** — title "Dayward", body
-"Today's the day.", with the event's name and emoji left out entirely.
-Notifications render on the lock screen in front of whoever else is in the
-room, and the names people give these events are often the private part.
-Someone tracking several dates can't tell from the banner which one
-arrived; that is the accepted cost, and no setting was added. The two
-constants to make conditional if that changes are `notificationTitle` and
-`notificationBody`.
+**Notifications name the event** (Phase 27, reversing Phase 26e by the
+user's call): title is the emoji plus title, body is the day's copy
+("Today's the day.", "Tomorrow.", "7 days to go.", "100 days today.").
+Knowing which date arrived was judged worth more than hiding it; iOS's own
+"Show Previews: When Unlocked" is the way to keep it off a lock screen.
+
+**Phase 27 (customizable notifications) is done** — GitHub issue #1.
+Per event: a time of day (`notifyMinuteOfDay`, default 9:00) and, for
+countdowns, a choice of reminders on the day / 1 day before / 1 week before
+(`notifyDaysBefore`). Count-ups announce 30, 60, then every 100 days —
+`isNotificationMilestone` in
+[lib/services/notification_schedule.dart](lib/services/notification_schedule.dart),
+deliberately separate from the visual `milestoneFor`, since an interruption
+earns a sparser rule than a restyled card. `notify` stays the single
+opt-in; what it announces follows the inferred direction. `canNotifyFor` is
+gone: every event can now opt in. No Swift changed — the native handler
+already took hour and minute.
+
+Verified on the simulator on 2026-09-28 by seeding `events.json` and
+decoding iOS's own store rather than the debug menu: pending requests live
+in an `NSKeyedArchiver` plist at
+`<sim>/data/Library/UserNotifications/<uuid>/PendingNotifications.plist`
+(keys `AppNotificationIdentifier`/`Title`/`Message`,
+`TriggerDateComponents`). Every id, fire time, and line of copy matched —
+including a skipped past lead time, an opted-out event, and a pre-Phase-27
+event defaulting to 9am on the day — and a milestone set a few minutes out
+was delivered as a banner. The editor's new controls were then checked by
+hand by the user. **Phase 27 is done**, closing GitHub issue #1.
 
 **The celebration mascot draws at 96pt, the walking one at 72pt.** Not an
 oversight: the celebration art carries confetti well outside the character,

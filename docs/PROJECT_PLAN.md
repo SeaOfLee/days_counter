@@ -1218,9 +1218,9 @@ of Phases 21–22, since it's about shipping what already exists rather
 than an optional additional learning exercise.
 
 Phase 20 is now done (the app shipped at 1.0.1). Phases 21 and 23–25
-were explicitly requested and are all done. **Phase 26 (Milestone
-Moments) is the active next phase** — also explicitly requested, and real
-upcoming work rather than a hypothetical exercise. Phase 22 (Lock Screen
+were explicitly requested and are all done. Phase 26 (Milestone
+Moments) is done. Phase 27 (Customizable Notifications), requested via GitHub issue #1, is
+done too. Phase 22 (Lock Screen
 Widgets) remains genuinely optional and unrequested — its number places
 it before 23–26 but its priority does not.
 
@@ -2107,7 +2107,10 @@ was worse: `#if DEBUG` is false in Runner's Swift unless the target is given
 never does — so every debug handler compiled away, and "pending shows 0"
 looked like a scheduling failure when it was a broken instrument.
 
-### 26e — Lock screen content — **done, no setting**
+### 26e — Lock screen content — **done, no setting** (reversed in Phase 27)
+
+> **Reversed by Phase 27**: notifications now name the event. Kept as the
+> record of the trade that was originally made.
 
 Notification text renders on the lock screen, in front of whoever else is
 in the room. This app's headline example is "Last Drink", and its likely
@@ -2200,6 +2203,65 @@ flutter analyze
 Plus a simulator pass: set an event to today, confirm both surfaces change
 and a notification fires; advance the simulator's date by a day and
 confirm both revert.
+
+---
+
+## Phase 27 — Customizable Notifications
+
+Requested via GitHub issue #1: "Currently the only option for a
+notification is 9am on the date of an event. Allow notifications for
+milestone days when counting up, and allow for customizable notifications
+for events counting down."
+
+Decisions, made with the user on 2026-09-28:
+
+- **The time is per event**, not app-wide. `DateEvent.notifyMinuteOfDay`
+  (minutes after local midnight, default 540 = 9:00).
+- **Countdowns choose from fixed lead times**: on the day, 1 day before,
+  1 week before (`DateEvent.notifyDaysBefore`, default `[0]`). A fixed set
+  rather than free entry keeps the editor to one row of chips and the
+  per-event count bounded under the 64-pending cap. Clearing every chip
+  saves the event as not notifying.
+- **Count-ups announce 30, 60, then every 100 days.** Explicitly provisional
+  ("we can fine tune this later"), so it lives in one predicate,
+  `isNotificationMilestone`, separate from the visual `milestoneFor` —
+  a notification interrupts, a restyled card doesn't, so they get different
+  rules. Only the next 3 per event are queued; scheduling only runs while
+  the app is open, and past day 100 that covers years.
+- **Notifications name the event**, reversing 26e. Title is emoji + title.
+- `notify` stays the single opt-in. What it announces follows the inferred
+  direction, so an event whose date passes switches from arrival reminders
+  to milestones on its next save. `canNotifyFor` is deleted — every event
+  can opt in now.
+
+Old `events.json` files load unchanged: absent keys default to exactly
+what Phase 26 did (9am, on the day). The widget's `Decodable` ignores the
+new keys. **No Swift changes** — the native handler already built its
+trigger from `hour` and `minute`.
+
+Ids stay `<eventId>-<dayCount>`: `-0`/`-1`/`-7` for countdown reminders
+(the count shown that day), `-30`/`-100`/... for milestones. They can't
+collide, since milestones start at 30 and lead times stop at 7.
+
+Success criterion:
+
+An event can be set to notify at a chosen time; a countdown can remind a
+day and a week ahead; a count-up notifies on its milestone days — each
+confirmed delivered on the simulator via the debug menu's pending list.
+
+**Met on the simulator (2026-09-28)** — see CLAUDE.md for how it was read.
+The editor controls were then checked by hand. **Phase 27 is done.**
+
+Verify:
+
+```bash
+flutter test
+flutter analyze
+```
+
+Plus a simulator pass: set a countdown with all three chips and a custom
+time, and a count-up, then check the debug menu's pending list shows the
+expected fire dates and copy.
 
 ---
 

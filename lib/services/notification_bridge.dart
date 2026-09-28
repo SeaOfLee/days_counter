@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 
+import '../models/date_event.dart';
 import 'notification_schedule.dart';
 
 /// Hands the scheduled milestone notifications to iOS.
@@ -30,10 +31,10 @@ class NotificationBridge {
   }
 
   /// Fires a throwaway notification a few seconds from now, carrying the
-  /// same copy a real reminder would.
+  /// same copy a real reminder would — shaped like a countdown's arrival.
   ///
   /// Debug builds only — the native handler is inside `#if DEBUG` and does
-  /// not exist in release. Real reminders are days away and fire at 9am, so
+  /// not exist in release. Real reminders are days away, so
   /// this is the only way to exercise delivery without waiting or moving the
   /// clock. It sends the production title and body deliberately: a test that
   /// shows placeholder text proves the plumbing works but says nothing about
@@ -42,8 +43,16 @@ class NotificationBridge {
     try {
       await _channel.invokeMethod('debugFireTestNotification', {
         'seconds': seconds,
-        'title': notificationTitle,
-        'body': notificationBody,
+        'title': notificationTitleFor(
+          DateEvent(
+            id: 'debug',
+            title: 'Vacation',
+            emoji: '🏖',
+            date: DateTime.now(),
+            direction: CountDirection.until,
+          ),
+        ),
+        'body': countdownBody(0),
       });
     } on MissingPluginException {
       // Not iOS, or a release build.

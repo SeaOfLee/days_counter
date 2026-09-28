@@ -41,10 +41,6 @@ class PendingNotification {
   }
 }
 
-/// Notifications fire at 9am local. Midnight is when the count technically
-/// changes, but a notification at midnight is one nobody wanted.
-const notificationHour = 9;
-
 /// Leaves headroom under the 64 pending local notifications iOS allows an
 /// app. Going over doesn't error — iOS silently drops the excess — so the
 /// budget is enforced here instead.
@@ -71,54 +67,90 @@ List<PendingNotification> plannedNotifications(
   return pending.take(maxPendingNotifications).toList();
 }
 
-/// The rules for one event.
-///
-/// There is exactly one today: a countdown tells you on the day it arrives.
-/// It is written as a function yielding a list rather than returning a
-/// single value so that adding a rule — round-number milestones, a
-/// day-before heads-up — is an addition here rather than a restructure of
-/// everything above.
+/// The reminder offsets a countdown can choose from, in days before its
+/// date. A fixed set rather than free entry: it keeps the editor to one row
+/// of chips and keeps the per-event count bounded under the budget above.
+const reminderLeadDays = [0, 1, 7];
+
+/// Day counts a count-up announces: 30, 60, then every hundred. Separate
+/// from [milestoneFor], which drives the visual treatment and has its own
+/// set — a notification interrupts, so it gets a sparser rule than a card
+/// that is only restyled. Tune here; nothing else knows the numbers.
+bool isNotificationMilestone(int days) {
+  if (days <= 0) return false;
+  if (days == 30 || days == 60) return true;
+  return days % 100 == 0;
+}
+
+/// How many upcoming milestones to queue per count-up. Scheduling only
+/// happens while the app is open, so this is how far ahead a user who stops
+/// opening it stays covered — past day 100 that is years.
+const milestonesPerEvent = 3;
+
+/// The rules for one event: a countdown's chosen reminders ahead of its
+/// date, or a count-up's next few milestones.
 Iterable<PendingNotification> _notificationsFor(
   DateEvent event,
   DateTime now,
 ) sync* {
-  // Only a countdown has a day to look forward to. An event counting up
-  // from the past has no future arrival, which is why the editor doesn't
-  // offer the toggle for one.
-  if (event.direction != CountDirection.until) return;
+  final title = notificationTitleFor(event);
 
-  final fireDate = DateTime(
-    event.date.year,
-    event.date.month,
-    event.date.day,
-    notificationHour,
-  );
+  if (event.direction == CountDirection.until) {
+    for (final daysBefore in event.notifyDaysBefore.toSet()) {
+      final fireDate = _fireDate(event, dayOffset: -daysBefore);
+      // The time may already have gone by; iOS fires a calendar trigger set
+      // in the past immediately, which reads as a bug.
+      if (!fireDate.isAfter(now)) continue;
+      yield PendingNotification(
+        id: '${event.id}-$daysBefore',
+        title: title,
+        body: countdownBody(daysBefore),
+        fireDate: fireDate,
+      );
+    }
+    return;
+  }
 
-  // 9am on the day may already have gone by; iOS fires a calendar trigger
-  // set in the past immediately, which reads as a bug.
-  if (!fireDate.isAfter(now)) return;
-
-  yield PendingNotification(
-    id: '${event.id}-0',
-    title: notificationTitle,
-    body: notificationBody,
-    fireDate: fireDate,
-  );
+  var found = 0;
+  // Starts at today's count, not the next one: today's milestone is still
+  // worth announcing if its time hasn't passed yet.
+  for (
+    var days = daysSince(event.date, now: now);
+    found < milestonesPerEvent;
+    days++
+  ) {
+    if (!isNotificationMilestone(days)) continue;
+    final fireDate = _fireDate(event, dayOffset: days);
+    if (!fireDate.isAfter(now)) continue;
+    found++;
+    yield PendingNotification(
+      id: '${event.id}-$days',
+      title: title,
+      body: '${dayCountLabel(days)} today.',
+      fireDate: fireDate,
+    );
+  }
 }
 
-/// Deliberately says nothing about which event arrived.
-///
-/// Notification text renders on the lock screen, in front of whoever else
-/// is in the room, and the names people give these events are often the
-/// private part — this app's own headline example is "Last Drink". Naming
-/// the event would be more useful and is the obvious thing to want; it is
-/// traded away on purpose. Opening the app shows which date it was.
-const notificationTitle = 'Dayward';
-const notificationBody = "Today's the day.";
+/// The local date and time [dayOffset] days from the event's date, at its
+/// chosen time. Overflows the day field rather than adding a Duration, for
+/// the same DST reason as [dateOffsetBy].
+DateTime _fireDate(DateEvent event, {required int dayOffset}) {
+  final day = dateOffsetBy(dayOffset, now: event.date);
+  return DateTime(day.year, day.month, day.day, 0, event.notifyMinuteOfDay);
+}
 
-/// Whether [date] can carry a reminder at all — that is, whether its
-/// arrival is still ahead. Shared with the editor so the toggle and the
-/// scheduler agree on what is eligible.
-bool canNotifyFor(DateTime date, {DateTime? now}) {
-  return daysUntil(date, now: now) > 0;
+/// Names the event. This was generic in Phase 26 to keep event names off
+/// the lock screen; that was reversed by the user's call in Phase 27 —
+/// knowing which date arrived is worth more than hiding it. iOS's own
+/// "Show Previews: When Unlocked" setting remains the way to hide it.
+String notificationTitleFor(DateEvent event) {
+  final emoji = event.emoji;
+  return emoji == null ? event.title : '$emoji ${event.title}';
+}
+
+String countdownBody(int daysBefore) {
+  if (daysBefore == 0) return "Today's the day.";
+  if (daysBefore == 1) return 'Tomorrow.';
+  return '${dayCountLabel(daysBefore)} to go.';
 }
