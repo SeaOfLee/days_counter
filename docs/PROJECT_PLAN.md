@@ -1220,7 +1220,8 @@ than an optional additional learning exercise.
 Phase 20 is now done (the app shipped at 1.0.1). Phases 21 and 23–25
 were explicitly requested and are all done. Phase 26 (Milestone
 Moments) is done. Phase 27 (Customizable Notifications), requested via GitHub issue #1, is
-done too. Phase 22 (Lock Screen
+done too. Phase 28 (Streaks) is drafted below as a **design in progress** —
+not approved to build yet. Phase 22 (Lock Screen
 Widgets) remains genuinely optional and unrequested — its number places
 it before 23–26 but its priority does not.
 
@@ -2262,6 +2263,97 @@ flutter analyze
 Plus a simulator pass: set a countdown with all three chips and a custom
 time, and a count-up, then check the debug menu's pending list shows the
 expected fire dates and copy.
+
+## Phase 28 — Streaks (DRAFT — design not final)
+
+> **Status: draft for discussion, drafted 2026-09-28.** Nothing here is
+> decided. The open questions at the end have to be settled with the user
+> before any code is written, and the slicing, model shape, and widget
+> approach below may all change. Don't treat this phase as ready to build.
+
+A streak counter: the user checks in once a day, e.g. "Gym Streak", and the
+count keeps growing only while they keep checking in. Missing a day breaks
+the streak.
+
+### Why this is different from every existing event
+
+Every event so far counts **passively**: its number changes because time
+passes. A streak counts **actively**: its number changes because the user
+did something, and it breaks when they don't. That difference drives
+nearly every decision below.
+
+It is also different from a sobriety-style count such as "Last Drink".
+That one breaks when something *happens* (a reset); a streak breaks when
+something *doesn't* (no check-in). The two shouldn't be merged into one
+concept. A plain "Reset to today" action on count-up events is a separate,
+much smaller feature and may be worth doing on its own.
+
+### Sketch: state
+
+Likely two dates rather than a log of every check-in: when the streak
+started, and the date of the most recent check-in. From those:
+
+- **Checked in today**: last check-in is today.
+- **At risk**: last check-in was yesterday; today's is still open.
+- **Broken**: last check-in is before yesterday.
+
+Check-ins are counted in local calendar days, the same way
+`date_calculations.dart` already treats dates. Keeping the model small
+(guiding principle 2) would argue for a `kind` or similar on `DateEvent`
+plus one new date field, not a separate model. Not decided.
+
+### Sketch: widget
+
+Three states rather than one number, but the existing timeline can already
+handle it: from the last check-in date, the seven precomputed entries can
+show "checked in" today, "check in" tomorrow, and "streak ended" the day
+after. A check-in reloads the timeline, as every edit already does.
+
+The Swift side would need to mirror the broken/at-risk rule, the same way
+`dayCount(for:on:)` and `milestone(for:)` already mirror their Dart
+versions.
+
+### Sketch: notifications
+
+A good fit for the existing local-notification setup with no background
+execution: every check-in schedules tomorrow evening's "don't break your
+streak" reminder and replaces any earlier one. If the user checks in again
+the reminder moves back a day; if they don't, it fires. This goes in
+`_notificationsFor` like the Phase 27 rules.
+
+### Possible slicing
+
+1. **In the app only**: the streak event type, a check-in button on the
+   card, the count and three states on the card and widget, and the evening
+   reminder. The widget only displays.
+2. **Check in from the widget**: an iOS 17 interactive widget `Button`
+   running an App Intent. This is the best version of the feature, but the
+   widget can't write to `events.json`, which lives in the app's own
+   container. It would record check-ins in the App Group and Flutter would
+   merge them in on launch, making this the first time the widget *writes*
+   data. That bends guiding principle 4 (Flutter owns the domain), so it
+   needs its own explicit decision.
+
+### Open questions
+
+- **How forgiving?** Strict daily streaks punish one missed day hard. A
+  grace day or a "freeze" is a common softener. Which, if either?
+- **What does broken look like?** Reset to zero automatically, or keep the
+  old count visible until the user starts again? Should past best streaks
+  be kept?
+- **Which days count?** Every day only, or goals like "3 times a week"?
+  The every-day version is far simpler.
+- **Is slice 2 wanted**, given it makes the widget write data?
+- **Can an existing event become a streak**, or is it chosen only when
+  creating one?
+- **Undo**: can an accidental check-in be taken back?
+
+### Success criterion (provisional)
+
+A streak event can be checked in once a day from the app; its count grows
+on consecutive days, shows as at risk when today's check-in is still open,
+and breaks after a missed day on both the card and the widget; and an
+evening reminder fires only on days without a check-in.
 
 ---
 

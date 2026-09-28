@@ -519,6 +519,10 @@ event defaulting to 9am on the day — and a milestone set a few minutes out
 was delivered as a banner. The editor's new controls were then checked by
 hand by the user. **Phase 27 is done**, closing GitHub issue #1.
 
+**Phase 28 (Streaks) is a draft only** — written into PROJECT_PLAN.md on
+2026-09-28 with its design explicitly not final. Settle its open questions
+with the user before writing any code for it.
+
 **The celebration mascot draws at 96pt, the walking one at 72pt.** Not an
 oversight: the celebration art carries confetti well outside the character,
 so at a shared frame its calendar body renders visibly smaller and the
