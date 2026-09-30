@@ -2,6 +2,16 @@
 
 Guidance for agents working in this repository.
 
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` at the root plus `docs/adr/` for architecture decisions. See `docs/agents/domain.md`.
+
 ## What this is
 
 An iOS-first Flutter app for tracking the number of days since or until
